@@ -1,0 +1,1 @@
+La nuova interfaccia mostra le note accanto al testo, senza coprirlo. Ogni nota si può applicare, ignorare o annullare, e lo stato resta salvato anche dopo aver chiuso la pagina. Chi scrive decide sempre l'ultima parola.

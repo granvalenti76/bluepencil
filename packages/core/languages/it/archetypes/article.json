@@ -1,0 +1,33 @@
+{
+  "name": "Articolo giornalistico",
+  "shortName": "Articolo",
+  "sections": {
+    "lead": {
+      "title": "Lead",
+      "guidance": "Chi, cosa, quando, perché: l'essenziale in poche righe."
+    },
+    "context": {
+      "title": "Contesto",
+      "guidance": "Il necessario per capire la notizia."
+    },
+    "development": {
+      "title": "Sviluppo",
+      "guidance": "I fatti, con le fonti, dal più al meno importante."
+    },
+    "closing": {
+      "title": "Chiusura",
+      "guidance": "Cosa succede dopo, o la conclusione."
+    }
+  },
+  "checklist": {
+    "lead-answers": "Il lead risponde a chi, cosa, quando, perché.",
+    "figures-sourced": "Ogni cifra ha una fonte.",
+    "has-closing": "C'è una chiusura.",
+    "no-hidden-opinions": "Niente opinioni non dichiarate."
+  },
+  "proseRules": [
+    "Frasi brevi.",
+    "Niente prima persona nel lead.",
+    "Il fatto più importante per primo."
+  ]
+}

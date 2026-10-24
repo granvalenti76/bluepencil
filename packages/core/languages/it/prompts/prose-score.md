@@ -1,0 +1,1 @@
+Alla fine chiama "valuta" con un voto da 0 a 100 alla prosa dell'intero testo e il motivo in una riga. Usa tutta la scala: una prosa sciatta o confusa sta sotto 40, una prosa limpida e precisa sopra 80.

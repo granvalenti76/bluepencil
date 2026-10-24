@@ -1,0 +1,29 @@
+{
+  "note": "Annota un punto della bozza. Una chiamata per ogni nota.",
+  "score": "Il voto all'intero testo, da chiamare una volta alla fine.",
+  "scoreReason": "Il motivo del voto, in una riga.",
+  "letter": "La lettera all'autore sul testo intero: da chiamare una volta, alla fine.",
+  "letterText": "Due o tre frasi: cosa funziona, il problema principale, cosa resta da fare.",
+  "fields": {
+    "grammar": {
+      "citazione": "Le parole sbagliate, copiate esattamente dalla bozza.",
+      "correzione": "Come vanno scritte.",
+      "spiegazione": "Perché, in una riga."
+    },
+    "prose": {
+      "citazione": "Il tratto, copiato esattamente dalla bozza.",
+      "problema": "Cosa non funziona, in una frase.",
+      "proposta": "Facoltativa: come lo riscriveresti."
+    },
+    "structure": {
+      "citazione": "Facoltativa: il tratto a cui ti riferisci, copiato esattamente.",
+      "osservazione": "Cosa non torna, in una o due frasi.",
+      "proposta": "Facoltativa: come sistemarlo."
+    },
+    "facts": {
+      "citazione": "L'affermazione, copiata esattamente dalla bozza.",
+      "spiegazione": "Cosa dice la fonte, in una riga.",
+      "correzione": "Facoltativa: il valore giusto, se la fonte lo dà."
+    }
+  }
+}

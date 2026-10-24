@@ -1,0 +1,62 @@
+{
+  "context": {
+    "heading": "# Draft",
+    "title": "Title: {{title}}",
+    "type": "Type of text: {{name}}",
+    "typeNone": "not chosen yet",
+    "brief": "## What it is about",
+    "glossary": "## Glossary (names and acronyms spelled correctly)",
+    "style": "## The author's style notes",
+    "ignored": "## Already dismissed by the author (don't suggest them again)",
+    "ignoredItem": "- “{{quote}}”"
+  },
+  "review": {
+    "text": "Text of the draft:",
+    "sources": "Sources:",
+    "sourceOpen": "<source ref=\"{{ref}}\">",
+    "sourceClose": "</source>",
+    "sourcesNone": "Sources: none.",
+    "footnotes": "Footnotes of the text:"
+  },
+  "structure": {
+    "genre": "The text is a “{{name}}”. A text of this type is usually built like this:",
+    "genrePart": "- {{title}}: {{guidance}}",
+    "genreTraits": "And it has these traits:",
+    "genreTrait": "- {{description}}",
+    "genreNone": "The type of text has not been chosen: judge whether the structure holds up on its own.",
+    "name": "“{{name}}”",
+    "nameNone": "coherent text"
+  },
+  "outline": {
+    "type": "Type of text: {{name}}",
+    "sections": "Typical sections: {{sections}}",
+    "section": "{{title}} ({{percent}}%: {{guidance}})",
+    "sectionSeparator": "; ",
+    "checklist": "Checklist: {{items}}",
+    "rules": "Prose rules: {{rules}}",
+    "target": "Total target: {{target}} words",
+    "topic": "What it is about:",
+    "noTopic": "(not given)"
+  },
+  "section": {
+    "draft": "Propose a first draft of the section “{{title}}” (about {{target}} words).",
+    "regenerate": "Propose a new version of the section “{{title}}” (about {{target}} words), keeping the facts of the current text.",
+    "reason": "Reason: {{reason}}",
+    "before": "Text just before:",
+    "current": "Current text of the section:",
+    "after": "Text just after:"
+  },
+  "rewrite": {
+    "goals": {
+      "concise": "more concise: the same content in fewer words; remove repetitions, asides and words that aren't needed",
+      "clear": "clearer: simple syntax, subject and verb close together, one idea per sentence, concrete words instead of abstract ones",
+      "fluent": "smoother: varied rhythm, natural links with the text before and after, without changing register or technical vocabulary",
+      "creative": "livelier: less predictable images, verbs and words, while staying credible for this type of text and true to the facts"
+    },
+    "text": "Text of the draft:",
+    "passage": "Passage to rewrite:"
+  },
+  "notes": {
+    "suggestion": "Suggestion: {{text}}"
+  }
+}

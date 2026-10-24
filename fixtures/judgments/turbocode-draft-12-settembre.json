@@ -1,0 +1,117 @@
+{
+  "draft": "turbocode-draft-12-settembre.md",
+  "judgments": [
+    {
+      "pass": "structure",
+      "sectionId": "lead",
+      "kind": "lead-why",
+      "quote": "Turbocode è un agent harness locale per macOS che gira con modelli linguistici locali, con opzione di fallback cloud.",
+      "title": "Il lead non dice «perché»",
+      "rationale": "Per un Articolo il lead risponde a chi, cosa e perché. Qui manca cosa cambia nella 0.6 per il lettore.",
+      "proposal": { "action": "regenerate_section", "label": "Riscrivi lead" },
+      "checkId": "lead-answers",
+      "checkStatus": "warn"
+    },
+    {
+      "pass": "facts",
+      "sectionId": "lead",
+      "kind": "verified",
+      "quote": "per macOS",
+      "title": "Verificato",
+      "rationale": "Confermato dalle fonti.",
+      "proposal": { "action": "none", "label": "" },
+      "factStatus": "verified"
+    },
+    {
+      "pass": "facts",
+      "sectionId": "development",
+      "kind": "verified",
+      "quote": "tra i 100 e i 150 MB di RAM",
+      "title": "Verificato",
+      "rationale": "Confermato da fatti.md.",
+      "proposal": { "action": "none", "label": "" },
+      "factStatus": "verified"
+    },
+    {
+      "pass": "facts",
+      "sectionId": "development",
+      "kind": "verified",
+      "quote": "contesto di 100k token",
+      "title": "Verificato",
+      "rationale": "Confermato da fatti.md.",
+      "proposal": { "action": "none", "label": "" },
+      "factStatus": "verified"
+    },
+    {
+      "pass": "facts",
+      "sectionId": "development",
+      "kind": "unsourced",
+      "quote": "non garantiscono un loop autonomo completo",
+      "title": "Affermazione senza fonte",
+      "rationale": "«non garantiscono un loop autonomo completo»: aggiungi una fonte o presentala come tua valutazione.",
+      "proposal": { "action": "add_source", "label": "Aggiungi fonte" },
+      "factStatus": "unsourced"
+    },
+    {
+      "pass": "facts",
+      "sectionId": "development",
+      "kind": "check-name",
+      "quote": "Qwen3.6-35B-3B",
+      "title": "Sigla da controllare",
+      "rationale": "Controlla «Qwen3.6-35B-3B» contro la sigla nelle tue fonti.",
+      "proposal": { "action": "compare_sources", "label": "Confronta" },
+      "factStatus": "to_check"
+    },
+    {
+      "pass": "grammar",
+      "sectionId": "development",
+      "kind": "agreement",
+      "quote": "si può integrare",
+      "title": "Concordanza",
+      "rationale": "«si può integrare modelli» → «si possono integrare modelli».",
+      "proposal": { "action": "replace", "text": "si possono integrare", "label": "Applica" }
+    },
+    {
+      "pass": "grammar",
+      "sectionId": "development",
+      "kind": "accent",
+      "quote": "perchè",
+      "title": "Accento",
+      "rationale": "«perchè» → «perché»: la e è chiusa, l'accento è acuto. (Solo nelle prove che inseriscono l'errore.)",
+      "proposal": { "action": "replace", "text": "perché", "label": "Applica" }
+    },
+    {
+      "pass": "prose",
+      "sectionId": "context",
+      "kind": "adverb",
+      "quote": "completamente",
+      "title": "Avverbio superfluo",
+      "rationale": "«completamente» aggiunge poco: «scritto in Swift» basta.",
+      "proposal": { "action": "delete", "label": "Elimina" }
+    },
+    {
+      "pass": "prose",
+      "sectionId": "lead",
+      "kind": "repetition",
+      "quote": "con modelli linguistici locali, con opzione di fallback cloud",
+      "title": "Ripetizione",
+      "rationale": "«con… con» ravvicinati. Proposta: «su modelli linguistici locali, con fallback cloud opzionale».",
+      "proposal": {
+        "action": "replace",
+        "text": "su modelli linguistici locali, con fallback cloud opzionale",
+        "label": "Applica"
+      }
+    },
+    {
+      "pass": "structure",
+      "sectionId": "closing",
+      "kind": "section-missing",
+      "quote": "",
+      "title": "Sezione «Chiusura» mancante",
+      "rationale": "Sezione «Chiusura» mancante: per un Articolo servono circa 50 parole.",
+      "proposal": { "action": "draft_section", "label": "Proponi una bozza" },
+      "checkId": "has-closing",
+      "checkStatus": "missing"
+    }
+  ]
+}

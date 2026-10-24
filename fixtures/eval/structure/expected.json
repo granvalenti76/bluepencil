@@ -1,0 +1,40 @@
+{
+  "pass": "structure",
+  "cases": [
+    {
+      "file": "01-lead-senza-perche.md",
+      "expected": [{ "quote": "", "type": "lead-answers", "note": "il lead non dice cosa e perché" }]
+    },
+    { "file": "02-senza-chiusura.md", "expected": [{ "quote": "", "type": "has-closing" }] },
+    { "file": "03-completo.md", "expected": [] },
+    {
+      "file": "04-cifre-e-opinioni.md",
+      "expected": [
+        { "quote": "", "type": "figures-sourced", "note": "18.000, 30%, 400 senza fonte" },
+        { "quote": "", "type": "no-hidden-opinions", "note": "«senza dubbio il migliore»" }
+      ]
+    },
+    {
+      "file": "05-blog-senza-punto-di-vista.md",
+      "expected": [{ "quote": "", "type": "point-of-view" }]
+    },
+    {
+      "file": "06-blog-conclusione-vuota.md",
+      "expected": [{ "quote": "", "type": "closing-call" }]
+    },
+    {
+      "file": "07-report-senza-limiti.md",
+      "expected": [
+        { "quote": "", "type": "summary-results", "note": "la sintesi non dice i risultati" },
+        { "quote": "", "type": "has-limits" }
+      ]
+    },
+    {
+      "file": "08-docs-passi.md",
+      "expected": [
+        { "quote": "", "type": "numbered-steps" },
+        { "quote": "", "type": "commands-in-code" }
+      ]
+    }
+  ]
+}

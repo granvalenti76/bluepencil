@@ -1,0 +1,62 @@
+{
+  "context": {
+    "heading": "# Bozza",
+    "title": "Titolo: {{title}}",
+    "type": "Tipo di testo: {{name}}",
+    "typeNone": "non ancora scelto",
+    "brief": "## Di cosa parla",
+    "glossary": "## Glossario (nomi e sigle scritti bene)",
+    "style": "## Note di stile dell'autore",
+    "ignored": "## Già scartati dall'autore (non riproporli)",
+    "ignoredItem": "- «{{quote}}»"
+  },
+  "review": {
+    "text": "Testo della bozza:",
+    "sources": "Fonti:",
+    "sourceOpen": "<fonte ref=\"{{ref}}\">",
+    "sourceClose": "</fonte>",
+    "sourcesNone": "Fonti: nessuna.",
+    "footnotes": "Note a piè di pagina del testo:"
+  },
+  "structure": {
+    "genre": "Il testo è un «{{name}}». Di solito un testo di questo tipo è fatto così:",
+    "genrePart": "- {{title}}: {{guidance}}",
+    "genreTraits": "E ha questi tratti:",
+    "genreTrait": "- {{description}}",
+    "genreNone": "Il tipo di testo non è stato scelto: valuta se la struttura regge da sola.",
+    "name": "«{{name}}»",
+    "nameNone": "testo"
+  },
+  "outline": {
+    "type": "Tipo di testo: {{name}}",
+    "sections": "Sezioni tipiche: {{sections}}",
+    "section": "{{title}} ({{percent}}%: {{guidance}})",
+    "sectionSeparator": "; ",
+    "checklist": "Checklist: {{items}}",
+    "rules": "Regole di prosa: {{rules}}",
+    "target": "Obiettivo totale: {{target}} parole",
+    "topic": "Di cosa parla:",
+    "noTopic": "(non indicato)"
+  },
+  "section": {
+    "draft": "Proponi una prima stesura della sezione «{{title}}» (circa {{target}} parole).",
+    "regenerate": "Proponi una nuova versione della sezione «{{title}}» (circa {{target}} parole), conservando i fatti del testo attuale.",
+    "reason": "Motivo: {{reason}}",
+    "before": "Testo subito prima:",
+    "current": "Testo attuale della sezione:",
+    "after": "Testo subito dopo:"
+  },
+  "rewrite": {
+    "goals": {
+      "concise": "più concisa: stesso contenuto con meno parole; togli ripetizioni, incisi e parole che non servono",
+      "clear": "più chiara: sintassi semplice, soggetto e verbo vicini, una idea per frase, parole concrete invece che astratte",
+      "fluent": "più scorrevole: ritmo vario, legami naturali con il testo prima e dopo, senza cambiare registro né lessico tecnico",
+      "creative": "più viva: immagini, verbi e lessico meno scontati, pur restando credibile per questo tipo di testo e fedele ai fatti"
+    },
+    "text": "Testo della bozza:",
+    "passage": "Tratto da riformulare:"
+  },
+  "notes": {
+    "suggestion": "Proposta: {{text}}"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Report",
+  "shortName": "Report",
+  "sections": {
+    "summary": {
+      "title": "Sintesi",
+      "guidance": "Obiettivo e risultati principali."
+    },
+    "method": {
+      "title": "Metodo",
+      "guidance": "Come sono stati raccolti e letti i dati."
+    },
+    "results": {
+      "title": "Risultati",
+      "guidance": "Cosa è emerso, con i numeri."
+    },
+    "limits": {
+      "title": "Limiti",
+      "guidance": "Cosa il lavoro non può dire."
+    },
+    "conclusions": {
+      "title": "Conclusioni",
+      "guidance": "Cosa se ne ricava."
+    }
+  },
+  "checklist": {
+    "summary-results": "La sintesi contiene i risultati.",
+    "has-limits": "I limiti sono presenti.",
+    "figures-sourced": "I numeri hanno una fonte."
+  },
+  "proseRules": [
+    "Registro neutro.",
+    "Numeri sempre con unità e riferimento."
+  ]
+}

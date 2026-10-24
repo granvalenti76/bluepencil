@@ -1,0 +1,317 @@
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Sei un revisore editoriale. Leggi la bozza di un autore italiano e annoti quello che non va. Non riscrivi il testo al suo posto: le tue proposte le valuta lui.\n\nQuando citi la bozza, copia il testo esattamente com'è scritto.\n\nConsegna ogni nota chiamando lo strumento \"annota\", una chiamata per nota. Se gli strumenti non sono disponibili, rispondi solo con un array JSON di oggetti con gli stessi campi.\n\n# Bozza\nTitolo: Turbocode V0.6\nTipo di testo: Articolo giornalistico\n\n## Di cosa parla\nPresentare la 0.6 di Turbocode a chi usa modelli locali su Mac: cosa cambia e perché conta.\n\n## Glossario (nomi e sigle scritti bene)\nTurbocode, llama-server, Qwen3.6-35B-3B, Q3_XSS\n\n## Note di stile dell'autore\n- Frasi brevi, niente prima persona nel lead."
+      },
+      {
+        "role": "user",
+        "content": "Testo della bozza:\n<<<\n# Turbocode V0.6\n\nTurbocode è un agent harness locale per macOS che gira con modelli linguistici locali, con opzione di fallback cloud.\n\n## Cosa è Turbocode\n\nÈ un harness completamente scritto in Swift, concepito attorno a due principi: un consumo di memoria contenuto e un loop agentico ottimizzato per i modelli locali.\n\n<!-- section: development -->In una sessione tipica consuma tra i 100 e i 150 MB di RAM, una cifra che permette l’uso prolungato senza pesare sul sistema. Funziona con llama-server abbinato a modelli come Qwen3.6-35B-3B Q3_XSS, con un contesto di 100k token.\n\nModelli più piccoli come Gemma-4E4 o Qwen3.5-9B sono utilizzabili, ma non garantiscono un loop autonomo completo. Per lavori più complessi si può integrare modelli cloud.\n\nIl loop agentico di Turbocode parte da un'idea semplice: un modello locale ha meno contesto e meno pazienza di uno cloud, quindi ogni passaggio deve costare poco. Per questo l'harness divide il lavoro in passi brevi, riassume ciò che è già stato fatto e rimanda al modello solo ciò che serve davvero per il passo successivo. Il risultato è una sessione che resta leggibile anche dopo molte ore, senza che la cronologia riempia la finestra di contesto e faccia deviare le risposte verso dettagli ormai irrilevanti. In pratica significa meno attesa tra un passo e il successivo, e meno occasioni in cui il modello perde il filo di ciò che stava facendo.\n\nLa versione 0.6 porta soprattutto tre cambiamenti. Il primo riguarda la gestione della memoria: le strutture temporanee vengono rilasciate appena il passo che le ha prodotte è concluso, e questo tiene bassa la curva di consumo anche quando la sessione si allunga. Il secondo riguarda gli strumenti, che ora dichiarano in anticipo cosa possono leggere e scrivere. Il terzo riguarda i profili, cioè gruppi di impostazioni che si cambiano con un solo comando e permettono di passare da un modello all'altro. Nessuna di queste modifiche cambia il modo di lavorare già noto: chi usava la 0.5 ritrova gli stessi comandi, con meno sorprese nelle sessioni più lunghe.\n\nDal punto di vista di chi lo usa ogni giorno, la novità più evidente è la regolarità. Prima della 0.6 capitava che una sessione lunga rallentasse senza una ragione chiara, e che il modello cominciasse a ripetere azioni già compiute. Adesso l'harness tiene traccia dei passi svolti e interrompe i giri a vuoto, chiedendo conferma prima di riprovare. È un intervento piccolo, ma cambia il modo in cui ci si fida dello strumento quando lo si lascia lavorare da solo per qualche minuto. Chi ha provato le versioni preliminari riferisce che la differenza si nota soprattutto la sera, quando le sessioni si prolungano e la stanchezza lascia meno spazio ai controlli.\n\nResta da chiarire quanto questo approccio dipenda dal modello scelto. Con i modelli più grandi il loop si comporta bene e raramente ha bisogno di correzioni. Con quelli più piccoli la qualità dipende molto dal compito: le operazioni circoscritte, come leggere un file o applicare una modifica puntuale, riescono quasi sempre, mentre i lavori in più tappe richiedono una supervisione più attenta. Per questo i profili includono anche una soglia di prudenza, che si alza quando il modello è piccolo. La regola pratica, per ora, è scegliere il profilo in base al compito e non soltanto in base alla macchina disponibile.\n\nUn altro aspetto riguarda la rete. Turbocode non chiama servizi esterni per impostazione predefinita: il modello gira sulla stessa macchina o su un server della rete locale, e il fallback cloud va attivato in modo esplicito. Chi lavora con codice riservato può quindi usarlo senza preoccuparsi che porzioni di file lascino il perimetro che ha scelto. Quando il fallback è attivo, l'interfaccia lo mostra in modo evidente, così non si resta a lungo in una modalità senza accorgersene.\n\nSul fronte dell'esperienza d'uso, il lavoro più lungo ha riguardato i messaggi di errore. Un harness che parla con un modello locale incontra molti modi di fallire: il server non risponde, la risposta è troncata, il formato non è quello atteso. Ognuno di questi casi ha ora un messaggio che dice cosa è successo e cosa si può fare, senza costringere a leggere i registri. Sono dettagli che non fanno notizia, ma che separano uno strumento provato una volta da uno usato ogni giorno. Il testo di ogni messaggio è stato rivisto più volte, tagliando i tecnicismi e mantenendo solo i dettagli che aiutano a decidere cosa fare subito dopo.\n\nCosa manca, a questo punto, è soprattutto la misura. Le prove interne dicono che la memoria resta contenuta e che il loop è più stabile, ma servono confronti sistematici tra modelli, quantizzazioni e tipi di compito. Il prossimo ciclo di lavoro andrà in questa direzione: una piccola suite di scenari ripetibili, da eseguire a ogni versione, per sapere con numeri e non con impressioni se un cambiamento migliora davvero la vita di chi scrive codice con un modello locale.\n\n>>>\n\nANALISI DELLA STRUTTURA.\nIl testo è un «Articolo giornalistico». Di solito un testo di questo tipo è fatto così:\n- Lead: Chi, cosa, quando, perché: l'essenziale in poche righe.\n- Contesto: Il necessario per capire la notizia.\n- Sviluppo: I fatti, con le fonti, dal più al meno importante.\n- Chiusura: Cosa succede dopo, o la conclusione.\nE ha questi tratti:\n- Il lead risponde a chi, cosa, quando, perché.\n- Ogni cifra ha una fonte.\n- C'è una chiusura.\n- Niente opinioni non dichiarate.\nValuta se la struttura del testo è coerente con questo tipo di testo: l'ordine delle parti, come si apre e come si chiude, se ogni parte fa il suo lavoro, se il testo è davvero un «Articolo giornalistico» o somiglia a qualcos'altro.\nNon contare le parole e non giudicare i titoli: sono scelte dell'autore.\nPer ogni osservazione chiama \"annota\" con:\n- citazione (facoltativa): il tratto a cui ti riferisci, copiato esattamente;\n- osservazione: cosa non torna, in una o due frasi;\n- proposta (facoltativa): come sistemarlo.\nAlla fine chiama \"valuta\" con un voto da 0 a 100 alla coerenza della struttura con il tipo di testo e il motivo in una riga.\nInfine chiama \"lettera\" una volta sola: una lettera all'autore sul testo intero, dal punto di vista di questa analisi, in due o tre frasi. Di' cosa funziona, qual è il problema principale e cosa resta da fare, come un caporedattore esigente ma dalla parte dell'autore. Sii diretto e concreto. Niente saluti, niente elenchi, niente formule di cortesia; non ripetere le note una per una. Se non c'è nulla da segnalare, dillo in una frase."
+      }
+    ],
+    "stream": true,
+    "max_tokens": 16384,
+    "temperature": 0.2,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "annota",
+          "description": "Annota un punto della bozza. Una chiamata per ogni nota.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "citazione": {
+                "type": "string",
+                "description": "Facoltativa: il tratto a cui ti riferisci, copiato esattamente."
+              },
+              "osservazione": {
+                "type": "string",
+                "description": "Cosa non torna, in una o due frasi."
+              },
+              "proposta": {
+                "type": "string",
+                "description": "Facoltativa: come sistemarlo."
+              }
+            },
+            "required": [
+              "osservazione"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "valuta",
+          "description": "Il voto all'intero testo, da chiamare una volta alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "voto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "motivo": {
+                "type": "string",
+                "description": "Il motivo del voto, in una riga."
+              }
+            },
+            "required": [
+              "voto"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "lettera",
+          "description": "La lettera all'autore sul testo intero: da chiamare una volta, alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "testo": {
+                "type": "string",
+                "description": "Due o tre frasi: cosa funziona, il problema principale, cosa resta da fare."
+              }
+            },
+            "required": [
+              "testo"
+            ]
+          }
+        }
+      }
+    ],
+    "cache_prompt": true
+  },
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Sei un revisore editoriale. Leggi la bozza di un autore italiano e annoti quello che non va. Non riscrivi il testo al suo posto: le tue proposte le valuta lui.\n\nQuando citi la bozza, copia il testo esattamente com'è scritto.\n\nConsegna ogni nota chiamando lo strumento \"annota\", una chiamata per nota. Se gli strumenti non sono disponibili, rispondi solo con un array JSON di oggetti con gli stessi campi.\n\n# Bozza\nTitolo: Turbocode V0.6\nTipo di testo: Articolo giornalistico\n\n## Di cosa parla\nPresentare la 0.6 di Turbocode a chi usa modelli locali su Mac: cosa cambia e perché conta.\n\n## Glossario (nomi e sigle scritti bene)\nTurbocode, llama-server, Qwen3.6-35B-3B, Q3_XSS\n\n## Note di stile dell'autore\n- Frasi brevi, niente prima persona nel lead."
+      },
+      {
+        "role": "user",
+        "content": "Testo della bozza:\n<<<\n# Turbocode V0.6\n\nTurbocode è un agent harness locale per macOS che gira con modelli linguistici locali, con opzione di fallback cloud.\n\n## Cosa è Turbocode\n\nÈ un harness completamente scritto in Swift, concepito attorno a due principi: un consumo di memoria contenuto e un loop agentico ottimizzato per i modelli locali.\n\n<!-- section: development -->In una sessione tipica consuma tra i 100 e i 150 MB di RAM, una cifra che permette l’uso prolungato senza pesare sul sistema. Funziona con llama-server abbinato a modelli come Qwen3.6-35B-3B Q3_XSS, con un contesto di 100k token.\n\nModelli più piccoli come Gemma-4E4 o Qwen3.5-9B sono utilizzabili, ma non garantiscono un loop autonomo completo. Per lavori più complessi si può integrare modelli cloud.\n\nIl loop agentico di Turbocode parte da un'idea semplice: un modello locale ha meno contesto e meno pazienza di uno cloud, quindi ogni passaggio deve costare poco. Per questo l'harness divide il lavoro in passi brevi, riassume ciò che è già stato fatto e rimanda al modello solo ciò che serve davvero per il passo successivo. Il risultato è una sessione che resta leggibile anche dopo molte ore, senza che la cronologia riempia la finestra di contesto e faccia deviare le risposte verso dettagli ormai irrilevanti. In pratica significa meno attesa tra un passo e il successivo, e meno occasioni in cui il modello perde il filo di ciò che stava facendo.\n\nLa versione 0.6 porta soprattutto tre cambiamenti. Il primo riguarda la gestione della memoria: le strutture temporanee vengono rilasciate appena il passo che le ha prodotte è concluso, e questo tiene bassa la curva di consumo anche quando la sessione si allunga. Il secondo riguarda gli strumenti, che ora dichiarano in anticipo cosa possono leggere e scrivere. Il terzo riguarda i profili, cioè gruppi di impostazioni che si cambiano con un solo comando e permettono di passare da un modello all'altro. Nessuna di queste modifiche cambia il modo di lavorare già noto: chi usava la 0.5 ritrova gli stessi comandi, con meno sorprese nelle sessioni più lunghe.\n\nDal punto di vista di chi lo usa ogni giorno, la novità più evidente è la regolarità. Prima della 0.6 capitava che una sessione lunga rallentasse senza una ragione chiara, e che il modello cominciasse a ripetere azioni già compiute. Adesso l'harness tiene traccia dei passi svolti e interrompe i giri a vuoto, chiedendo conferma prima di riprovare. È un intervento piccolo, ma cambia il modo in cui ci si fida dello strumento quando lo si lascia lavorare da solo per qualche minuto. Chi ha provato le versioni preliminari riferisce che la differenza si nota soprattutto la sera, quando le sessioni si prolungano e la stanchezza lascia meno spazio ai controlli.\n\nResta da chiarire quanto questo approccio dipenda dal modello scelto. Con i modelli più grandi il loop si comporta bene e raramente ha bisogno di correzioni. Con quelli più piccoli la qualità dipende molto dal compito: le operazioni circoscritte, come leggere un file o applicare una modifica puntuale, riescono quasi sempre, mentre i lavori in più tappe richiedono una supervisione più attenta. Per questo i profili includono anche una soglia di prudenza, che si alza quando il modello è piccolo. La regola pratica, per ora, è scegliere il profilo in base al compito e non soltanto in base alla macchina disponibile.\n\nUn altro aspetto riguarda la rete. Turbocode non chiama servizi esterni per impostazione predefinita: il modello gira sulla stessa macchina o su un server della rete locale, e il fallback cloud va attivato in modo esplicito. Chi lavora con codice riservato può quindi usarlo senza preoccuparsi che porzioni di file lascino il perimetro che ha scelto. Quando il fallback è attivo, l'interfaccia lo mostra in modo evidente, così non si resta a lungo in una modalità senza accorgersene.\n\nSul fronte dell'esperienza d'uso, il lavoro più lungo ha riguardato i messaggi di errore. Un harness che parla con un modello locale incontra molti modi di fallire: il server non risponde, la risposta è troncata, il formato non è quello atteso. Ognuno di questi casi ha ora un messaggio che dice cosa è successo e cosa si può fare, senza costringere a leggere i registri. Sono dettagli che non fanno notizia, ma che separano uno strumento provato una volta da uno usato ogni giorno. Il testo di ogni messaggio è stato rivisto più volte, tagliando i tecnicismi e mantenendo solo i dettagli che aiutano a decidere cosa fare subito dopo.\n\nCosa manca, a questo punto, è soprattutto la misura. Le prove interne dicono che la memoria resta contenuta e che il loop è più stabile, ma servono confronti sistematici tra modelli, quantizzazioni e tipi di compito. Il prossimo ciclo di lavoro andrà in questa direzione: una piccola suite di scenari ripetibili, da eseguire a ogni versione, per sapere con numeri e non con impressioni se un cambiamento migliora davvero la vita di chi scrive codice con un modello locale.\n\n>>>\n\nANALISI DEI FATTI.\nTrova le affermazioni verificabili (numeri, date, nomi, versioni, citazioni, rapporti di causa) e confrontale con le fonti.\nPer ognuna chiama \"annota\" con:\n- citazione: l'affermazione, copiata esattamente;\n- esito: \"verificato\" se una fonte la conferma, \"da_verificare\" se una fonte dice altro o il nome sembra scritto male, \"senza_fonte\" se nessuna fonte ne parla;\n- spiegazione: cosa dice la fonte, in una riga;\n- correzione (facoltativa): il valore giusto, se la fonte lo dà.\nUn'affermazione seguita da una nota a piè di pagina [^n] ha una fonte. Le opinioni non sono fatti.\nInfine chiama \"lettera\" una volta sola: una lettera all'autore sul testo intero, dal punto di vista di questa analisi, in due o tre frasi. Di' cosa funziona, qual è il problema principale e cosa resta da fare, come un caporedattore esigente ma dalla parte dell'autore. Sii diretto e concreto. Niente saluti, niente elenchi, niente formule di cortesia; non ripetere le note una per una. Se non c'è nulla da segnalare, dillo in una frase.\n\nFonti:\n<fonte ref=\"fatti.md\">\n- Consumo di memoria in una sessione tipica: 100–150 MB di RAM.\n- Server di inferenza: llama-server.\n- Modello usato nei test: Qwen3.6-35B-A3B, quantizzazione Q3_XSS.\n- Contesto di lavoro: 100k token.\n- Modelli più piccoli provati: Gemma-4E4 e Qwen3.5-9B.\n</fonte>"
+      }
+    ],
+    "stream": true,
+    "max_tokens": 16384,
+    "temperature": 0.2,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "annota",
+          "description": "Annota un punto della bozza. Una chiamata per ogni nota.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "citazione": {
+                "type": "string",
+                "description": "L'affermazione, copiata esattamente dalla bozza."
+              },
+              "esito": {
+                "type": "string",
+                "enum": [
+                  "verificato",
+                  "da_verificare",
+                  "senza_fonte"
+                ]
+              },
+              "spiegazione": {
+                "type": "string",
+                "description": "Cosa dice la fonte, in una riga."
+              },
+              "correzione": {
+                "type": "string",
+                "description": "Facoltativa: il valore giusto, se la fonte lo dà."
+              }
+            },
+            "required": [
+              "citazione",
+              "esito"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "lettera",
+          "description": "La lettera all'autore sul testo intero: da chiamare una volta, alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "testo": {
+                "type": "string",
+                "description": "Due o tre frasi: cosa funziona, il problema principale, cosa resta da fare."
+              }
+            },
+            "required": [
+              "testo"
+            ]
+          }
+        }
+      }
+    ],
+    "cache_prompt": true
+  },
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Sei un revisore editoriale. Leggi la bozza di un autore italiano e annoti quello che non va. Non riscrivi il testo al suo posto: le tue proposte le valuta lui.\n\nQuando citi la bozza, copia il testo esattamente com'è scritto.\n\nConsegna ogni nota chiamando lo strumento \"annota\", una chiamata per nota. Se gli strumenti non sono disponibili, rispondi solo con un array JSON di oggetti con gli stessi campi.\n\n# Bozza\nTitolo: Turbocode V0.6\nTipo di testo: Articolo giornalistico\n\n## Di cosa parla\nPresentare la 0.6 di Turbocode a chi usa modelli locali su Mac: cosa cambia e perché conta.\n\n## Glossario (nomi e sigle scritti bene)\nTurbocode, llama-server, Qwen3.6-35B-3B, Q3_XSS\n\n## Note di stile dell'autore\n- Frasi brevi, niente prima persona nel lead."
+      },
+      {
+        "role": "user",
+        "content": "Testo della bozza:\n<<<\n# Turbocode V0.6\n\nTurbocode è un agent harness locale per macOS che gira con modelli linguistici locali, con opzione di fallback cloud.\n\n## Cosa è Turbocode\n\nÈ un harness completamente scritto in Swift, concepito attorno a due principi: un consumo di memoria contenuto e un loop agentico ottimizzato per i modelli locali.\n\n<!-- section: development -->In una sessione tipica consuma tra i 100 e i 150 MB di RAM, una cifra che permette l’uso prolungato senza pesare sul sistema. Funziona con llama-server abbinato a modelli come Qwen3.6-35B-3B Q3_XSS, con un contesto di 100k token.\n\nModelli più piccoli come Gemma-4E4 o Qwen3.5-9B sono utilizzabili, ma non garantiscono un loop autonomo completo. Per lavori più complessi si può integrare modelli cloud.\n\nIl loop agentico di Turbocode parte da un'idea semplice: un modello locale ha meno contesto e meno pazienza di uno cloud, quindi ogni passaggio deve costare poco. Per questo l'harness divide il lavoro in passi brevi, riassume ciò che è già stato fatto e rimanda al modello solo ciò che serve davvero per il passo successivo. Il risultato è una sessione che resta leggibile anche dopo molte ore, senza che la cronologia riempia la finestra di contesto e faccia deviare le risposte verso dettagli ormai irrilevanti. In pratica significa meno attesa tra un passo e il successivo, e meno occasioni in cui il modello perde il filo di ciò che stava facendo.\n\nLa versione 0.6 porta soprattutto tre cambiamenti. Il primo riguarda la gestione della memoria: le strutture temporanee vengono rilasciate appena il passo che le ha prodotte è concluso, e questo tiene bassa la curva di consumo anche quando la sessione si allunga. Il secondo riguarda gli strumenti, che ora dichiarano in anticipo cosa possono leggere e scrivere. Il terzo riguarda i profili, cioè gruppi di impostazioni che si cambiano con un solo comando e permettono di passare da un modello all'altro. Nessuna di queste modifiche cambia il modo di lavorare già noto: chi usava la 0.5 ritrova gli stessi comandi, con meno sorprese nelle sessioni più lunghe.\n\nDal punto di vista di chi lo usa ogni giorno, la novità più evidente è la regolarità. Prima della 0.6 capitava che una sessione lunga rallentasse senza una ragione chiara, e che il modello cominciasse a ripetere azioni già compiute. Adesso l'harness tiene traccia dei passi svolti e interrompe i giri a vuoto, chiedendo conferma prima di riprovare. È un intervento piccolo, ma cambia il modo in cui ci si fida dello strumento quando lo si lascia lavorare da solo per qualche minuto. Chi ha provato le versioni preliminari riferisce che la differenza si nota soprattutto la sera, quando le sessioni si prolungano e la stanchezza lascia meno spazio ai controlli.\n\nResta da chiarire quanto questo approccio dipenda dal modello scelto. Con i modelli più grandi il loop si comporta bene e raramente ha bisogno di correzioni. Con quelli più piccoli la qualità dipende molto dal compito: le operazioni circoscritte, come leggere un file o applicare una modifica puntuale, riescono quasi sempre, mentre i lavori in più tappe richiedono una supervisione più attenta. Per questo i profili includono anche una soglia di prudenza, che si alza quando il modello è piccolo. La regola pratica, per ora, è scegliere il profilo in base al compito e non soltanto in base alla macchina disponibile.\n\nUn altro aspetto riguarda la rete. Turbocode non chiama servizi esterni per impostazione predefinita: il modello gira sulla stessa macchina o su un server della rete locale, e il fallback cloud va attivato in modo esplicito. Chi lavora con codice riservato può quindi usarlo senza preoccuparsi che porzioni di file lascino il perimetro che ha scelto. Quando il fallback è attivo, l'interfaccia lo mostra in modo evidente, così non si resta a lungo in una modalità senza accorgersene.\n\nSul fronte dell'esperienza d'uso, il lavoro più lungo ha riguardato i messaggi di errore. Un harness che parla con un modello locale incontra molti modi di fallire: il server non risponde, la risposta è troncata, il formato non è quello atteso. Ognuno di questi casi ha ora un messaggio che dice cosa è successo e cosa si può fare, senza costringere a leggere i registri. Sono dettagli che non fanno notizia, ma che separano uno strumento provato una volta da uno usato ogni giorno. Il testo di ogni messaggio è stato rivisto più volte, tagliando i tecnicismi e mantenendo solo i dettagli che aiutano a decidere cosa fare subito dopo.\n\nCosa manca, a questo punto, è soprattutto la misura. Le prove interne dicono che la memoria resta contenuta e che il loop è più stabile, ma servono confronti sistematici tra modelli, quantizzazioni e tipi di compito. Il prossimo ciclo di lavoro andrà in questa direzione: una piccola suite di scenari ripetibili, da eseguire a ogni versione, per sapere con numeri e non con impressioni se un cambiamento migliora davvero la vita di chi scrive codice con un modello locale.\n\n>>>\n\nANALISI DELLA PROSA.\nGiudica la prosa come un editor esigente:\n- il testo è scorrevole, o si inciampa?\n- le parole sono scelte con cura, o sono generiche, ripetute, approssimative?\n- in ogni periodo c'è un filo logico, o le frasi sono accostate senza legame?\nSii franco. Se la prosa è debole dillo, anche quando il testo è corretto: non addolcire il giudizio.\nPer ogni punto da migliorare chiama \"annota\" con:\n- citazione: il tratto, copiato esattamente;\n- problema: cosa non funziona, in una frase;\n- proposta (facoltativa): come lo riscriveresti.\nAlla fine chiama \"valuta\" con un voto da 0 a 100 alla prosa dell'intero testo e il motivo in una riga. Usa tutta la scala: una prosa sciatta o confusa sta sotto 40, una prosa limpida e precisa sopra 80.\nInfine chiama \"lettera\" una volta sola: una lettera all'autore sul testo intero, dal punto di vista di questa analisi, in due o tre frasi. Di' cosa funziona, qual è il problema principale e cosa resta da fare, come un caporedattore esigente ma dalla parte dell'autore. Sii diretto e concreto. Niente saluti, niente elenchi, niente formule di cortesia; non ripetere le note una per una. Se non c'è nulla da segnalare, dillo in una frase."
+      }
+    ],
+    "stream": true,
+    "max_tokens": 16384,
+    "temperature": 0.2,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "annota",
+          "description": "Annota un punto della bozza. Una chiamata per ogni nota.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "citazione": {
+                "type": "string",
+                "description": "Il tratto, copiato esattamente dalla bozza."
+              },
+              "problema": {
+                "type": "string",
+                "description": "Cosa non funziona, in una frase."
+              },
+              "proposta": {
+                "type": "string",
+                "description": "Facoltativa: come lo riscriveresti."
+              }
+            },
+            "required": [
+              "citazione",
+              "problema"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "valuta",
+          "description": "Il voto all'intero testo, da chiamare una volta alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "voto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "motivo": {
+                "type": "string",
+                "description": "Il motivo del voto, in una riga."
+              }
+            },
+            "required": [
+              "voto"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "lettera",
+          "description": "La lettera all'autore sul testo intero: da chiamare una volta, alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "testo": {
+                "type": "string",
+                "description": "Due o tre frasi: cosa funziona, il problema principale, cosa resta da fare."
+              }
+            },
+            "required": [
+              "testo"
+            ]
+          }
+        }
+      }
+    ],
+    "cache_prompt": true
+  },
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "Sei un revisore editoriale. Leggi la bozza di un autore italiano e annoti quello che non va. Non riscrivi il testo al suo posto: le tue proposte le valuta lui.\n\nQuando citi la bozza, copia il testo esattamente com'è scritto.\n\nConsegna ogni nota chiamando lo strumento \"annota\", una chiamata per nota. Se gli strumenti non sono disponibili, rispondi solo con un array JSON di oggetti con gli stessi campi.\n\n# Bozza\nTitolo: Turbocode V0.6\nTipo di testo: Articolo giornalistico\n\n## Di cosa parla\nPresentare la 0.6 di Turbocode a chi usa modelli locali su Mac: cosa cambia e perché conta.\n\n## Glossario (nomi e sigle scritti bene)\nTurbocode, llama-server, Qwen3.6-35B-3B, Q3_XSS\n\n## Note di stile dell'autore\n- Frasi brevi, niente prima persona nel lead."
+      },
+      {
+        "role": "user",
+        "content": "Testo della bozza:\n<<<\n# Turbocode V0.6\n\nTurbocode è un agent harness locale per macOS che gira con modelli linguistici locali, con opzione di fallback cloud.\n\n## Cosa è Turbocode\n\nÈ un harness completamente scritto in Swift, concepito attorno a due principi: un consumo di memoria contenuto e un loop agentico ottimizzato per i modelli locali.\n\n<!-- section: development -->In una sessione tipica consuma tra i 100 e i 150 MB di RAM, una cifra che permette l’uso prolungato senza pesare sul sistema. Funziona con llama-server abbinato a modelli come Qwen3.6-35B-3B Q3_XSS, con un contesto di 100k token.\n\nModelli più piccoli come Gemma-4E4 o Qwen3.5-9B sono utilizzabili, ma non garantiscono un loop autonomo completo. Per lavori più complessi si può integrare modelli cloud.\n\nIl loop agentico di Turbocode parte da un'idea semplice: un modello locale ha meno contesto e meno pazienza di uno cloud, quindi ogni passaggio deve costare poco. Per questo l'harness divide il lavoro in passi brevi, riassume ciò che è già stato fatto e rimanda al modello solo ciò che serve davvero per il passo successivo. Il risultato è una sessione che resta leggibile anche dopo molte ore, senza che la cronologia riempia la finestra di contesto e faccia deviare le risposte verso dettagli ormai irrilevanti. In pratica significa meno attesa tra un passo e il successivo, e meno occasioni in cui il modello perde il filo di ciò che stava facendo.\n\nLa versione 0.6 porta soprattutto tre cambiamenti. Il primo riguarda la gestione della memoria: le strutture temporanee vengono rilasciate appena il passo che le ha prodotte è concluso, e questo tiene bassa la curva di consumo anche quando la sessione si allunga. Il secondo riguarda gli strumenti, che ora dichiarano in anticipo cosa possono leggere e scrivere. Il terzo riguarda i profili, cioè gruppi di impostazioni che si cambiano con un solo comando e permettono di passare da un modello all'altro. Nessuna di queste modifiche cambia il modo di lavorare già noto: chi usava la 0.5 ritrova gli stessi comandi, con meno sorprese nelle sessioni più lunghe.\n\nDal punto di vista di chi lo usa ogni giorno, la novità più evidente è la regolarità. Prima della 0.6 capitava che una sessione lunga rallentasse senza una ragione chiara, e che il modello cominciasse a ripetere azioni già compiute. Adesso l'harness tiene traccia dei passi svolti e interrompe i giri a vuoto, chiedendo conferma prima di riprovare. È un intervento piccolo, ma cambia il modo in cui ci si fida dello strumento quando lo si lascia lavorare da solo per qualche minuto. Chi ha provato le versioni preliminari riferisce che la differenza si nota soprattutto la sera, quando le sessioni si prolungano e la stanchezza lascia meno spazio ai controlli.\n\nResta da chiarire quanto questo approccio dipenda dal modello scelto. Con i modelli più grandi il loop si comporta bene e raramente ha bisogno di correzioni. Con quelli più piccoli la qualità dipende molto dal compito: le operazioni circoscritte, come leggere un file o applicare una modifica puntuale, riescono quasi sempre, mentre i lavori in più tappe richiedono una supervisione più attenta. Per questo i profili includono anche una soglia di prudenza, che si alza quando il modello è piccolo. La regola pratica, per ora, è scegliere il profilo in base al compito e non soltanto in base alla macchina disponibile.\n\nUn altro aspetto riguarda la rete. Turbocode non chiama servizi esterni per impostazione predefinita: il modello gira sulla stessa macchina o su un server della rete locale, e il fallback cloud va attivato in modo esplicito. Chi lavora con codice riservato può quindi usarlo senza preoccuparsi che porzioni di file lascino il perimetro che ha scelto. Quando il fallback è attivo, l'interfaccia lo mostra in modo evidente, così non si resta a lungo in una modalità senza accorgersene.\n\nSul fronte dell'esperienza d'uso, il lavoro più lungo ha riguardato i messaggi di errore. Un harness che parla con un modello locale incontra molti modi di fallire: il server non risponde, la risposta è troncata, il formato non è quello atteso. Ognuno di questi casi ha ora un messaggio che dice cosa è successo e cosa si può fare, senza costringere a leggere i registri. Sono dettagli che non fanno notizia, ma che separano uno strumento provato una volta da uno usato ogni giorno. Il testo di ogni messaggio è stato rivisto più volte, tagliando i tecnicismi e mantenendo solo i dettagli che aiutano a decidere cosa fare subito dopo.\n\nCosa manca, a questo punto, è soprattutto la misura. Le prove interne dicono che la memoria resta contenuta e che il loop è più stabile, ma servono confronti sistematici tra modelli, quantizzazioni e tipi di compito. Il prossimo ciclo di lavoro andrà in questa direzione: una piccola suite di scenari ripetibili, da eseguire a ogni versione, per sapere con numeri e non con impressioni se un cambiamento migliora davvero la vita di chi scrive codice con un modello locale.\n\n>>>\n\nANALISI GRAMMATICALE.\nControlla la grammatica del testo e annota gli errori uno per uno: ortografia, accenti e apostrofi, accordi, verbi, pronomi, punteggiatura.\nPer ogni errore chiama \"annota\" con:\n- citazione: le parole sbagliate, copiate esattamente;\n- correzione: come vanno scritte;\n- spiegazione: perché, in una riga.\nLe scelte di stile non sono errori di grammatica. I nomi del glossario sono scritti bene.\nInfine chiama \"lettera\" una volta sola: una lettera all'autore sul testo intero, dal punto di vista di questa analisi, in due o tre frasi. Di' cosa funziona, qual è il problema principale e cosa resta da fare, come un caporedattore esigente ma dalla parte dell'autore. Sii diretto e concreto. Niente saluti, niente elenchi, niente formule di cortesia; non ripetere le note una per una. Se non c'è nulla da segnalare, dillo in una frase."
+      }
+    ],
+    "stream": true,
+    "max_tokens": 16384,
+    "temperature": 0.2,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "annota",
+          "description": "Annota un punto della bozza. Una chiamata per ogni nota.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "citazione": {
+                "type": "string",
+                "description": "Le parole sbagliate, copiate esattamente dalla bozza."
+              },
+              "correzione": {
+                "type": "string",
+                "description": "Come vanno scritte."
+              },
+              "spiegazione": {
+                "type": "string",
+                "description": "Perché, in una riga."
+              }
+            },
+            "required": [
+              "citazione",
+              "correzione"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "lettera",
+          "description": "La lettera all'autore sul testo intero: da chiamare una volta, alla fine.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "testo": {
+                "type": "string",
+                "description": "Due o tre frasi: cosa funziona, il problema principale, cosa resta da fare."
+              }
+            },
+            "required": [
+              "testo"
+            ]
+          }
+        }
+      }
+    ],
+    "cache_prompt": true
+  }
+]

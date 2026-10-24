@@ -1,0 +1,1 @@
+Quando il modello locale riceve un blocco di testo troppo lungo e il server è già occupato da un'altra applicazione che usa lo stesso slot, la richiesta resta in coda per diversi minuti e l'interfaccia deve continuare a mostrare che cosa sta succedendo, altrimenti chi scrive pensa che il programma si sia bloccato e lo chiude. Per questo lo stato è sempre visibile.

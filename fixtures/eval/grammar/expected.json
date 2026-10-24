@@ -1,0 +1,50 @@
+{
+  "pass": "grammar",
+  "cases": [
+    {
+      "file": "01-apostrofi.md",
+      "expected": [
+        { "quote": "un'altro", "note": "un altro (maschile, senza apostrofo)" },
+        { "quote": "perchè", "note": "perché (accento acuto)" }
+      ]
+    },
+    {
+      "file": "02-accordi.md",
+      "expected": [
+        { "quote": "ha dato", "note": "le prove … hanno dato" },
+        { "quote": "raccolte", "note": "i dati raccolti" }
+      ]
+    },
+    {
+      "file": "03-qual-e.md",
+      "expected": [
+        { "quote": "qual'è", "note": "qual è (troncamento, senza apostrofo)" },
+        { "quote": "pò", "note": "po' (apostrofo, non accento)" }
+      ]
+    },
+    { "file": "04-pulito.md", "expected": [] },
+    {
+      "file": "05-accenti.md",
+      "expected": [
+        { "quote": "nuova e più veloce", "note": "è più veloce (verbo)" },
+        { "quote": "sè", "note": "sé" }
+      ]
+    },
+    {
+      "file": "06-punteggiatura.md",
+      "expected": [
+        { "quote": "anni, ha deciso", "note": "virgola fra soggetto e verbo" },
+        { "quote": "nè su Linux", "note": "né" },
+        { "quote": "nè su Windows", "note": "né" }
+      ]
+    },
+    { "file": "07-nomi-tecnici.md", "expected": [] },
+    {
+      "file": "08-pronomi.md",
+      "expected": [
+        { "quote": "gli ho scritto", "note": "le ho scritto (a Maria)" },
+        { "quote": "Avvolte", "note": "A volte" }
+      ]
+    }
+  ]
+}

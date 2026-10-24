@@ -1,0 +1,29 @@
+{
+  "note": "Note a point of the draft. One call for each note.",
+  "score": "The score for the whole text, to be called once at the end.",
+  "scoreReason": "The reason for the score, in one line.",
+  "letter": "The letter to the author about the whole text: call it once, at the end.",
+  "letterText": "Two or three sentences: what works, the main problem, what is left to do.",
+  "fields": {
+    "grammar": {
+      "citazione": "The wrong words, copied exactly from the draft.",
+      "correzione": "How they should be written.",
+      "spiegazione": "Why, in one line."
+    },
+    "prose": {
+      "citazione": "The passage, copied exactly from the draft.",
+      "problema": "What doesn't work, in one sentence.",
+      "proposta": "Optional: how you would rewrite it."
+    },
+    "structure": {
+      "citazione": "Optional: the passage you mean, copied exactly.",
+      "osservazione": "What doesn't add up, in one or two sentences.",
+      "proposta": "Optional: how to fix it."
+    },
+    "facts": {
+      "citazione": "The claim, copied exactly from the draft.",
+      "spiegazione": "What the source says, in one line.",
+      "correzione": "Optional: the right value, if the source gives it."
+    }
+  }
+}

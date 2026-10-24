@@ -1,0 +1,26 @@
+{
+  "name": "Post di blog",
+  "shortName": "Post di blog",
+  "sections": {
+    "opening": {
+      "title": "Apertura",
+      "guidance": "Un gancio e il tema del post."
+    },
+    "body": {
+      "title": "Corpo",
+      "guidance": "Il racconto o l'argomentazione, con esempi."
+    },
+    "conclusion": {
+      "title": "Conclusione",
+      "guidance": "Cosa resta al lettore."
+    }
+  },
+  "checklist": {
+    "point-of-view": "C'è un punto di vista dichiarato.",
+    "closing-call": "C'è un invito finale o una conclusione."
+  },
+  "proseRules": [
+    "Tono diretto, anche in prima persona.",
+    "Paragrafi brevi."
+  ]
+}

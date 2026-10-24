@@ -1,0 +1,122 @@
+/* The single source of colours and sizes. */
+:root {
+  /* Laid paper: a linen-coloured desk, an ivory page, the ink. */
+  --desk: #e6ded0;
+  --bars: #efe8dc;
+  --rule: #ddd3c2;
+  --paper: #faf5e9;
+  --card: #fcf8ee;
+  --card-rule: #cdb995;
+  --ink: #2a2018;
+  --ink-2: #4a3a2a;
+  --ink-secondary: #5e5246;
+  --line-number: #7a6446;
+  --selection: #ecdcb8;
+  --code-bg: #efe6d3;
+  /* Link underline: thin brown, never blue (blue belongs to the editor). */
+  --underline: #a08a66;
+  /* The sign-off's sealing wax. */
+  --seal: #7d2219;
+  /* The paper tape holding the tips card on the desk. */
+  --tape: rgb(214 196 152 / 0.72);
+
+  /* Interface roles, above the paper. */
+  --bg: var(--desk);
+  --bg-sidebar: var(--bars);
+  --bg-toolbar: var(--bars);
+  --surface: var(--card);
+  --text: var(--ink);
+  --text-2: var(--ink-2);
+  --text-muted: var(--ink-secondary);
+  /* Decorations (dashes, visible markers): not text to read. */
+  --text-faint: #8a7558;
+  --border: var(--rule);
+  --border-soft: #e8e0d2;
+  --border-strong: var(--card-rule);
+  /* The editor's blue pencil: the brand and the only accent. Main buttons, active choices, marks
+     on the text, note numbers. The text stays ink. */
+  --pencil: #2b4f8c;
+  --pencil-strong: #213d6e;
+  --pencil-bg: #e7ebf1;
+  /* Waiting marks (later passes): decoration, not text. */
+  --pencil-soft: #a9b6cf;
+  --accent: var(--pencil);
+  --accent-bg: var(--pencil-bg);
+  --accent-text: var(--pencil-strong);
+  --on-accent: var(--card);
+  --on-accent-line: rgb(252 248 238 / 0.25);
+  /* Focus belongs to the pencil, offset from the element (outline-offset): a double ring. */
+  --focus: var(--pencil);
+  /* The page: ivory, barely perceptible grain and chain lines, slightly irregular edges, soft warm
+     shadow. A local SVG image drawn only once: a CSS filter on the page would be redrawn at every
+     keystroke. */
+  --shadow-sheet: 0 1px 2px rgb(90 65 40 / 0.08), 0 10px 28px rgb(90 65 40 / 0.16);
+  --paper-sheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='e' x='-2%25' y='-2%25' width='104%25' height='104%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='2' seed='7'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='3' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.33 0 0 0 0 0.2 0 0 0 0.06 0'/%3E%3C/filter%3E%3Cpattern id='l' width='30' height='3' patternUnits='userSpaceOnUse'%3E%3Crect width='30' height='1' fill='%238a6a3c' fill-opacity='0.03'/%3E%3Crect width='1' height='3' fill='%238a6a3c' fill-opacity='0.045'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='%23faf5e9' filter='url(%23e)'/%3E%3Crect x='0.5%25' y='0.5%25' width='99%25' height='99%25' fill='url(%23l)'/%3E%3Crect x='0.5%25' y='0.5%25' width='99%25' height='99%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --desk-texture:
+    repeating-linear-gradient(0deg, rgb(120 90 50 / 0.025) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgb(120 90 50 / 0.025) 0 1px, transparent 1px 3px);
+  --fact-ok: #1b7f55;
+  --fact: #9a5b00;
+  --fact-bg: #fbf0d6;
+  --grammar: #b3261e;
+  --grammar-bg: #fbe4e1;
+  --prose: #2457c5;
+  --prose-bg: #e6edfb;
+  --clarity: #2f7d6d;
+  --struct: #6a3fb0;
+  --struct-bg: #efe8fa;
+  --struct-border: #b9a5de;
+  --struct-surface: #f8f4fd;
+  --over: #b7791f;
+  /* The amber of "over target" as small text: darker, for contrast. */
+  --warn-text: #8a4f00;
+  --empty: #c4b79f;
+  --font-ui: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --font-text: "EB Garamond", Georgia, serif;
+  /* The editor's hand and the author's signature. */
+  --font-hand: "Mrs Saint Delafield", cursive;
+  --font-signature: "Pinyon Script", cursive;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* The interface's type scale: four sizes, as in the HIG (caption, footnote, body, title). The
+     draft's text has its own (editor-theme.ts). */
+  --fs-caption: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-title: 15px;
+  --fw-medium: 500;
+  /* The author's text on the page: body 21/34 px, fixed measure, so the page's lines change only
+     with the type size. Room on the left for the line numbers. */
+  --text-size: 21px;
+  --text-line: 34px;
+  /* "Handwriting": the editor's letter script has a small x-height and is unreadable at 21 px;
+     larger, with wider leading for ascenders and descenders. */
+  --hand-size: 32px;
+  --hand-line: 42px;
+  --measure: 620px;
+  --numbers: 64px;
+  --fw-bold: 600;
+  --radius: 8px;
+  --shadow-1: 0 1px 2px rgb(90 65 40 / 0.06);
+  --shadow-1-hover: 0 1px 2px rgb(90 65 40 / 0.07), 0 4px 12px rgb(90 65 40 / 0.08);
+  --shadow-2: 0 8px 28px rgb(90 65 40 / 0.16), 0 1px 3px rgb(90 65 40 / 0.08);
+  --glass: rgb(239 232 220 / 0.88);
+  --tip-bg: var(--ink);
+  --tip-text: var(--paper);
+  --danger: #c2261d;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-width: 280px;
+  --panel-motion: 200ms ease;
+}
+
+body {
+  font-variant-ligatures: none; /* no ligatures: <!-- and --> must stay readable */
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+}
+
+::selection {
+  background: var(--selection);
+}

@@ -1,0 +1,1 @@
+At the end call "valuta" with a score from 0 to 100 for the prose of the whole text and the reason in one line. Use the whole scale: sloppy or confusing prose is below 40, clear and precise prose above 80.

@@ -1,0 +1,52 @@
+{
+  "pass": "prose",
+  "cases": [
+    {
+      "file": "01-avverbi.md",
+      "expected": [
+        { "quote": "sostanzialmente", "type": "adverb" },
+        { "quote": "praticamente", "type": "adverb" }
+      ]
+    },
+    {
+      "file": "02-ripetizione.md",
+      "expected": [
+        {
+          "quote": "Il progetto vuole semplificare il lavoro di chi scrive, e il progetto lo fa",
+          "type": "repetition",
+          "note": "«il progetto» tre volte in due frasi: vale una nota che citi una delle ripetizioni"
+        }
+      ]
+    },
+    {
+      "file": "03-frase-lunga.md",
+      "expected": [
+        {
+          "quote": "Quando il modello locale riceve un blocco di testo troppo lungo",
+          "type": "long-sentence",
+          "note": "la prima frase supera le 35 parole"
+        }
+      ]
+    },
+    {
+      "file": "04-passivo.md",
+      "expected": [{ "quote": "La decisione è stata presa dal gruppo", "type": "passive" }]
+    },
+    { "file": "05-pulito.md", "expected": [] },
+    {
+      "file": "06-stile-autore.md",
+      "expected": [{ "quote": "Abbiamo deciso", "type": "style", "note": "prima persona plurale" }]
+    },
+    {
+      "file": "07-misto.md",
+      "expected": [
+        { "quote": "assolutamente", "type": "adverb" },
+        {
+          "quote": "è importante per chi scrive a lungo, ed è importante",
+          "type": "repetition"
+        }
+      ]
+    },
+    { "file": "08-pulito-tecnico.md", "expected": [] }
+  ]
+}

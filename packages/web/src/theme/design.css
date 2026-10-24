@@ -1,0 +1,2381 @@
+/*
+ * Visual language: modern and restrained. Flat surfaces, thin borders, a single ink-coloured
+ * accent, light shadows, short animations. Everything from the tokens.
+ * Comes after app.css and restyles its main components.
+ */
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ── Barra in alto ─────────────────────────────────────────────── */
+.toolbar {
+  /* The glass (backdrop-filter) creates a stacking context: the bar's menus must stay above the
+     editor. */
+  position: relative;
+  z-index: 20;
+  height: 52px;
+  gap: 4px;
+  padding: 0 12px;
+  background: var(--glass);
+  backdrop-filter: saturate(1.2) blur(12px);
+  border-bottom: 1px solid var(--border-soft);
+}
+.icon-btn {
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.icon-btn:hover {
+  background: var(--border-soft);
+  color: var(--text);
+}
+.icon-btn[aria-pressed="true"],
+.icon-btn[data-active="true"],
+.icon-btn[aria-expanded="true"] {
+  background: var(--accent-bg);
+  color: var(--text);
+}
+.icon-btn:disabled {
+  opacity: 0.35;
+}
+
+.doctitle {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 8px;
+  line-height: 1.25;
+}
+.doctitle-name {
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+.doctitle-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.stage-current {
+  color: var(--text-2);
+}
+.stage-current::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--text-faint);
+}
+.save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fact-ok);
+  transition: background 300ms;
+}
+.save-dot[data-status="dirty"],
+.save-dot[data-status="saving"] {
+  background: var(--over);
+}
+.save-dot[data-status="error"],
+.save-dot[data-status="conflict"] {
+  background: var(--danger);
+}
+
+/* Row of review passes: done, the one to work on, the later ones. */
+.pass-rail {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+.pass-rail ol {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pass-rail li {
+  display: flex;
+  align-items: center;
+}
+.pass-rail li + li::before {
+  content: "";
+  width: 14px;
+  height: 1px;
+  margin: 0 2px;
+  background: var(--border-strong);
+}
+.pass {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-small);
+  transition:
+    background 120ms,
+    border-color 120ms;
+}
+.pass:hover:not(:disabled) {
+  background: var(--border-soft);
+}
+.pass:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+.pass[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--text);
+}
+.pass-name {
+  font-weight: var(--fw-medium);
+}
+.pass[aria-current="step"] .pass-name {
+  font-weight: var(--fw-bold);
+}
+.pass-info {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pass-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-faint);
+  box-sizing: border-box;
+}
+.pass[data-status="open"] .pass-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.pass[data-status="running"] .pass-mark {
+  border-color: var(--accent);
+  border-right-color: transparent;
+  animation: spin 900ms linear infinite;
+}
+.pass[data-status="done"] .pass-mark {
+  border: 0;
+  color: var(--fact-ok);
+}
+.pass[data-status="done"] {
+  color: var(--text);
+}
+.pass[data-status="skipped"] .pass-mark {
+  border-style: dashed;
+}
+.pass[data-changed="true"] .pass-info {
+  color: var(--over);
+}
+@media (max-width: 1360px) {
+  .pass-info {
+    display: none;
+  }
+  .pass {
+    padding: 0 8px;
+  }
+}
+
+/* Review button: filled, ink-coloured; the menu next to it. */
+.review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  transition: opacity 120ms;
+}
+.review-btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.review-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.review-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.review-split {
+  display: flex;
+  margin: 0 4px;
+}
+.review-split > .review-btn:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.review-split .review-more {
+  width: auto;
+  padding: 0 9px;
+  border-radius: 0 8px 8px 0;
+  border-left: 1px solid var(--on-accent-line);
+}
+.review-btn.review-running {
+  margin: 0 4px;
+  background: linear-gradient(
+    to right,
+    var(--accent-bg) var(--progress, 0%),
+    var(--surface) var(--progress, 0%)
+  );
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.review-running svg {
+  animation: spin 2.4s linear infinite;
+}
+
+/* ── Menu ──────────────────────────────────────────────────────── */
+.menu {
+  top: calc(100% + 6px);
+  min-width: 210px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-2);
+  animation: pop 140ms var(--ease-out);
+  transform-origin: top right;
+}
+.menu-wide {
+  min-width: 290px;
+}
+.menu-item {
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.menu-item:disabled {
+  color: var(--text-faint);
+}
+.menu-item svg {
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+}
+.menu-item kbd {
+  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: var(--fs-caption);
+  color: var(--text-faint);
+}
+.menu-item-2 {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.menu-item-2 small {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+
+/* ── Hover tooltips ───────────────────────────────────────────── */
+.tip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 260px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: var(--tip-bg);
+  color: var(--tip-text);
+  font-size: var(--fs-small);
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-2);
+  animation: tip-in 120ms var(--ease-out);
+}
+.tip::before {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--arrow-x, 0px));
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--tip-bg);
+  transform: rotate(45deg);
+}
+.tip[data-side="below"]::before {
+  top: -3px;
+}
+.tip[data-side="above"]::before {
+  bottom: -3px;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border-soft);
+}
+.sidebar-head {
+  gap: 4px;
+}
+.sidebar-head .reveal-btn {
+  margin-left: auto;
+  margin-right: 0;
+}
+.new-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 18px;
+  line-height: 1;
+  transition: opacity 120ms;
+}
+.new-btn:hover {
+  opacity: 0.88;
+}
+.sidebar-search input {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.filters {
+  gap: 2px;
+  padding: 2px 14px 8px;
+}
+.filters .seg {
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+}
+.filters .seg[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+.draft-card {
+  border-radius: 10px;
+  border-color: var(--border-soft);
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.draft-card:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-1-hover);
+}
+.draft-card[aria-current="true"] {
+  border-color: var(--accent);
+}
+details.outline > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+details.outline > summary::-webkit-details-marker {
+  display: none;
+}
+details.outline > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 12px;
+  color: var(--text-faint);
+  transition: transform 150ms var(--ease-out);
+}
+details.outline[open] > summary::before {
+  transform: rotate(90deg);
+}
+.outline-title {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  color: var(--text-2);
+}
+
+/* ── Right-hand panel ──────────────────────────────────────────── */
+.notes-panel {
+  /* Fixed width: a long title on one line (resolved notes) must not widen the panel over the
+     editor. The content shrinks, the panel does not. */
+  min-width: 0;
+  width: clamp(280px, 25vw, 380px);
+  max-width: 380px;
+  border-left: 1px solid var(--border-soft);
+}
+.notes-list,
+.notes-item,
+.note,
+.note-head {
+  min-width: 0;
+}
+.panel-title {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+}
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.reading-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+/* Outside the prose pass the indices open from the title. */
+.reading-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: inherit;
+  cursor: pointer;
+}
+.reading-toggle::after {
+  content: " ›";
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--text-muted);
+  transition: transform 120ms ease;
+}
+.reading-toggle[aria-expanded="true"]::after {
+  transform: rotate(90deg);
+}
+.reading-time {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.rings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ring {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px 8px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+}
+.ring svg {
+  width: 52px;
+  height: 52px;
+}
+.ring-track {
+  fill: none;
+  stroke: var(--border-soft);
+  stroke-width: 4;
+}
+.ring-fill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 700ms var(--ease-out);
+}
+.ring[data-tone="clarity"] .ring-fill {
+  stroke: var(--clarity);
+}
+.ring[data-tone="prose"] .ring-fill {
+  stroke: var(--prose);
+}
+.ring[data-tone="structure"] .ring-fill {
+  stroke: var(--struct);
+}
+.ring[data-stale="true"] .ring-fill {
+  stroke: var(--empty);
+}
+.ring-value {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+.ring-label {
+  margin-top: 4px;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+}
+.ring-note {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.25;
+}
+.ring[data-stale="true"] .ring-note {
+  color: var(--over);
+}
+
+.notes-head {
+  padding: 12px 12px 6px 16px;
+  align-items: center;
+}
+/* At the top of the panel: the pass shown and what can be done. */
+.pass-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px 16px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  font-size: var(--fs-small);
+}
+.pass-head-title {
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+.pass-head-note {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pass-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+.pass-btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.pass-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pass-link {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.pass-link:hover:not(:disabled) {
+  color: var(--text);
+}
+.pass-link:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.notes-section {
+  margin: 10px 4px 0;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.notes-empty {
+  margin: 8px 4px;
+  line-height: 1.45;
+}
+.confirm {
+  display: inline-flex;
+  gap: 4px;
+}
+.confirm-yes,
+.confirm-no {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: var(--fs-small);
+}
+.confirm-yes {
+  border: 0;
+  background: var(--danger);
+  color: var(--on-accent);
+  font-weight: var(--fw-medium);
+}
+.confirm-no {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* The notes: white surfaces, a line of colour for the type. */
+.note {
+  position: relative;
+  padding: 9px 11px 9px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  animation: note-in 220ms var(--ease-out) both;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.note[data-status="open"] {
+  border-color: var(--border-soft);
+}
+.note:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-1-hover);
+}
+.note::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--border);
+}
+.note[data-type="struct"]::before {
+  background: var(--struct);
+}
+.note[data-type="fact"]::before {
+  background: var(--fact);
+}
+.note[data-type="grammar"]::before {
+  background: var(--grammar);
+}
+.note[data-type="prose"]::before {
+  background: var(--prose);
+}
+.note:not([data-status="open"])::before {
+  background: var(--border);
+}
+.note-chip {
+  padding: 0;
+  background: none !important;
+  font-weight: var(--fw-medium);
+}
+.note-quote {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  color: var(--text-muted);
+  quotes: "«" "»";
+}
+.note-proposal {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.note-proposal::before {
+  content: "→ ";
+  color: var(--text-faint);
+}
+.note-primary {
+  border-radius: 6px;
+  font-weight: var(--fw-medium);
+}
+.note-ignore {
+  border-radius: 6px;
+  border-color: var(--border);
+}
+
+/* ── Status bar ────────────────────────────────────────────────── */
+.statusbar {
+  height: 28px;
+  gap: 12px;
+  padding: 0 14px;
+  border-top: 1px solid var(--border-soft);
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+
+/* ── Animations ────────────────────────────────────────────────── */
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+}
+@keyframes tip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-2px);
+  }
+}
+@keyframes note-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Galley: the page on the desk, the margin, the pencil ─────────────────────────────────── */
+.writing {
+  background: var(--desk-texture), var(--desk);
+}
+
+/* The draft is a sheet of paper (laid paper): grain, chain lines, slightly irregular edges, soft
+   shadow. Line numbers and text inside, pencil marks in the margins. */
+.sheet {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  padding: 28px 40px 0 36px;
+}
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper-sheet) 0 0 / 100% 100% no-repeat;
+  box-shadow: var(--shadow-sheet);
+  pointer-events: none;
+}
+.editor-col {
+  flex-basis: calc(36px + var(--numbers) + var(--measure) + 40px);
+}
+/* The margin: the same paper, with the pencil notes. */
+.notes-panel {
+  background: var(--paper);
+  border-left: 1px solid var(--border-soft);
+}
+.notes-list {
+  gap: 0;
+  padding: 0 12px 24px;
+}
+.notes-item + .notes-item {
+  border-top: 1px solid var(--border-soft);
+}
+.notes-list .note {
+  margin: 4px 0;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+.notes-list .note:hover {
+  background: var(--bg);
+  box-shadow: none;
+}
+.notes-list .note::before {
+  display: none;
+}
+.notes-list .note[data-status="applied"],
+.notes-list .note[data-status="ignored"] {
+  background: transparent;
+}
+.note-number {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: var(--pencil);
+  color: var(--on-accent);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+.note:not([data-status="open"]) .note-number {
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.notes-list .note-chip {
+  order: 3;
+  flex-shrink: 0;
+  color: var(--text-muted) !important;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.notes-list .note-text {
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.notes-list .note-quote {
+  font-style: italic;
+}
+.notes-list .note-primary {
+  background: var(--pencil);
+  color: var(--on-accent);
+}
+.pass[data-changed="true"] .pass-info {
+  color: var(--warn-text);
+}
+
+/* The editor's letter: at the top of the margin, in pencil, in an editorial italic. */
+.letter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 6px;
+  padding: 10px 8px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.letter-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.letter-label {
+  flex: 1;
+  color: var(--pencil);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.letter-score {
+  min-width: 26px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1.5px var(--pencil);
+  color: var(--pencil);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.letter-text {
+  margin: 0;
+  color: var(--pencil-strong);
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.letter-meta {
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.letter[data-stale="true"] .letter-text {
+  color: var(--text-muted);
+}
+.letter[data-stale="true"] .letter-meta {
+  color: var(--warn-text);
+}
+
+/* Authorship: next to the phase, discreet; on click it shows the model's words. */
+.authorship {
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.authorship:hover:not(:disabled) {
+  color: var(--text);
+}
+.authorship[aria-pressed="true"] {
+  background: var(--pencil-bg);
+  color: var(--pencil-strong);
+}
+/* On narrow windows the row of passes takes precedence: only the essentials of the title and
+   the authorship remain. */
+@media (max-width: 1360px) {
+  .doctitle-name {
+    max-width: 24vw;
+  }
+}
+@media (max-width: 1360px) {
+  .pass-rail li + li::before {
+    width: 8px;
+  }
+}
+/* The type of text stays in the drafts bar. */
+@media (max-width: 1280px) {
+  .doctitle-type,
+  .doctitle-type + .stage-current::before {
+    display: none;
+  }
+}
+
+/* The sign-off: a pencil stamp, the summary, publishing. */
+.signoff {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 12px 8px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+.stamp {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  border: 2px solid var(--pencil);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 3px var(--paper),
+    inset 0 0 0 4px var(--pencil);
+  color: var(--pencil);
+  transform: rotate(-4deg);
+}
+.stamp-title {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.14em;
+}
+.stamp-date {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+}
+.record {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin: 0;
+}
+.record dt {
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+.record dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+.signoff-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The habits: below the letter, in the prose pass. */
+.habits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 10px 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.habit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  font-size: var(--fs-small);
+}
+.habit-name {
+  color: var(--text);
+}
+.habit-here {
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.habit-all {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.note-habit {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1px var(--pencil-soft);
+  color: var(--pencil-strong);
+  font-size: var(--fs-caption);
+}
+
+/* ── Write / Review ────────────────────────────────────────────────────────────────────────
+   At the top the draft, Write / Review in the centre, the actions on the right; below, a tool
+   row of the same height in both modes (formatting or passes); then the desk: outline and page
+   in Write, page and notes in Review. No fixed column: the drafts list opens on top. */
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+}
+.toolbar-side {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.toolbar-end {
+  justify-content: flex-end;
+}
+.drafts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -6px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+}
+.drafts-btn:hover,
+.drafts-btn[aria-expanded="true"] {
+  background: var(--border-soft);
+}
+.drafts-btn svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+}
+.mode-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--border);
+}
+.mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 22px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+.mode-btn[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--text);
+  font-weight: var(--fw-bold);
+  box-shadow: var(--shadow-1);
+}
+.mode-btn:disabled {
+  opacity: 0.5;
+}
+
+/* The drafts list over the desk. */
+.drafts-layer .draft-list {
+  flex: 1 1 auto;
+  max-height: none;
+  padding-bottom: 12px;
+}
+.drafts-layer {
+  position: fixed;
+  inset: 53px 0 0;
+  z-index: 30;
+}
+.drafts-layer > .sidebar {
+  position: absolute;
+  top: 8px;
+  bottom: 12px;
+  left: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  animation: pop 160ms var(--ease-out);
+}
+
+.desk-bar {
+  flex-shrink: 0;
+  height: 46px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--desk-texture), var(--desk);
+}
+.desk-bar > .pass-rail {
+  flex: 0 1 auto;
+}
+.desk-bar-hint {
+  padding-bottom: 8px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.desk {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 24px 0;
+}
+
+/* The outline: an index card next to the page. */
+.outline-card {
+  flex: 0 0 210px;
+  align-self: flex-start;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 3px;
+  background: var(--paper);
+  box-shadow: var(--shadow-1-hover);
+}
+.outline-card .outline-title {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.outline-card .outline-list {
+  gap: 2px;
+}
+.outline-card .section-card {
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+}
+.outline-card .section-card:not(:disabled):hover .section-head {
+  color: var(--text);
+}
+.outline-card .section-head {
+  color: var(--text-2);
+}
+
+/* Status bar in three: the review, "Show Markdown", the model. */
+.statusbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  background: var(--bars);
+}
+.statusbar-side {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.statusbar-end {
+  justify-content: flex-end;
+}
+.show-md {
+  padding: 1px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.show-md[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--text);
+}
+.show-md kbd {
+  margin-left: 4px;
+  font-family: inherit;
+}
+
+/* Focus: tools and outline go away, the app's bars dim. */
+.shell > .toolbar,
+.shell > .statusbar {
+  transition: opacity 200ms;
+}
+.shell[data-focus="true"] > .toolbar:not(:hover, :focus-within),
+.shell[data-focus="true"] > .statusbar:not(:hover, :focus-within) {
+  opacity: 0.55;
+}
+
+/* Preview: the piece as it will be published, on a page like the editor's. */
+.preview.sheet {
+  flex: 0 0 calc(36px + var(--numbers) + var(--measure) + 40px);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 56px 72px 64px;
+  font-size: var(--text-size);
+  line-height: var(--text-line);
+}
+.preview h1 {
+  font-size: 40px;
+  line-height: 52px;
+  font-weight: 500;
+}
+.preview h2 {
+  font-size: 26px;
+  line-height: 40px;
+  font-weight: 500;
+}
+.preview .note-ref {
+  padding-left: 2px;
+  font-size: 0.62em;
+  line-height: 0;
+  color: var(--pencil);
+}
+
+/* ── Formatting bar ──────────────────────────────────────────────────────────────────────── */
+.format-bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow-1);
+}
+.fmt-btn {
+  height: 32px;
+  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+.fmt-btn:hover:not(:disabled),
+.fmt-btn[aria-expanded="true"] {
+  background: var(--border-soft);
+}
+.fmt-btn:disabled {
+  opacity: 0.4;
+}
+.fmt-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.fmt-glyph {
+  font-family: var(--font-text);
+  font-size: 17px;
+}
+.fmt-style {
+  min-width: 128px;
+  justify-content: space-between;
+}
+.fmt-style svg {
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+}
+.fmt-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--border);
+}
+/* "Ask the editor": the only blue button, because it is the only one that calls the editor. */
+.fmt-ask {
+  color: var(--pencil);
+}
+.fmt-ask:hover:not(:disabled) {
+  background: var(--pencil-bg);
+}
+
+/* The styles menu: every item with its look. */
+.style-menu {
+  min-width: 240px;
+}
+.style-item {
+  justify-content: space-between;
+  gap: 24px;
+}
+.style-item[aria-checked="true"] {
+  background: var(--border-soft);
+}
+.style-sample {
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--text);
+}
+.style-item[data-style="title"] .style-sample {
+  font-size: 26px;
+  font-weight: 500;
+}
+.style-item[data-style="heading"] .style-sample {
+  font-size: 21px;
+  font-weight: 500;
+}
+.style-item[data-style="subheading"] .style-sample {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.style-item[data-style="quote"] .style-sample {
+  padding-left: 10px;
+  font-style: italic;
+  color: var(--text-2);
+  box-shadow: inset 2px 0 var(--border-strong);
+}
+.style-item[data-style="code"] .style-sample {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.style-item[data-style="bullet"] .style-sample::before {
+  content: "– ";
+  color: var(--text-faint);
+}
+.style-item[data-style="numbered"] .style-sample::before {
+  content: "1. ";
+  color: var(--text-muted);
+}
+
+/* Source: three tabs above the actions on the sources. */
+.source-menu {
+  width: 380px;
+  padding: 0;
+}
+.source-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.source-tab {
+  padding: 6px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+}
+.source-tab[aria-selected="true"] {
+  border-bottom-color: var(--text);
+  color: var(--text);
+  font-weight: var(--fw-bold);
+}
+.source-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+.source-pane input {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--text);
+  font: inherit;
+}
+.source-pane .source-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+.source-pane .source-passage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+}
+.source-pane .source-passage .source-text {
+  grid-column: 1;
+}
+.source-pane .source-passage .note-primary {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.source-estimate {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 17px;
+  font-style: italic;
+}
+.format-bar .menu {
+  right: auto;
+  left: 0;
+}
+
+/* ── The editor's card ───────────────────────────────────────────────────────────────────
+   A card with a double rule next to the page, slightly askew; the passes' tabs above, the
+   waiting card below; the editor's hand in blue. */
+.card-stack {
+  position: relative;
+  flex: 0 1 clamp(320px, 30vw, 450px);
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 4px 0;
+}
+.card-stack:has(.pass-tabs) {
+  padding-top: 38px;
+}
+/* The next pass's card, askew below the main card. */
+.card-stack[data-waiting="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 52px -6px 10px 14px;
+  z-index: 0;
+  border-radius: 2px;
+  background: var(--card);
+  box-shadow: var(--shadow-1-hover);
+  transform: rotate(1.6deg);
+}
+.pass-tabs {
+  position: absolute;
+  top: 9px;
+  left: 18px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  transform: rotate(0.5deg);
+  transform-origin: left bottom;
+}
+/* On a narrow card the tabs shrink (with ellipses), the open one does not. */
+.pass-tab {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 7px 7px 0 0;
+  background: var(--code-bg);
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+.pass-tab[aria-selected="true"] {
+  flex-shrink: 0;
+  padding: 7px 13px 6px;
+  background: var(--card);
+  color: var(--pencil);
+  font-weight: var(--fw-bold);
+}
+.pass-tab:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  opacity: 1;
+}
+.pass-tab[data-status="running"] {
+  color: var(--pencil);
+}
+/* The pencil tick on closed passes. */
+.pass-tick {
+  font-family: var(--font-hand);
+  font-size: 22px;
+  line-height: 0;
+  color: var(--pencil);
+}
+.editor-card.notes-panel {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  margin: 0 0 0 2px;
+  border: 1px solid var(--card-rule);
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  outline: 1px solid var(--card-rule);
+  outline-offset: -6px;
+  background: var(--card);
+  box-shadow: var(--shadow-2);
+  transform: rotate(0.5deg);
+  transform-origin: top left;
+}
+.editor-card .notes-head {
+  padding: 22px 26px 6px;
+}
+.editor-card .panel-title {
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.editor-card .notes-list {
+  padding: 0 18px 12px 22px;
+}
+.editor-card .reading {
+  padding: 8px 4px 14px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+.notes-ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+/* The letter, handwritten by the editor. */
+.editor-card .letter {
+  margin: 4px 0 2px;
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.editor-card .letter-text {
+  font-family: var(--font-hand);
+  font-size: 34px;
+  font-style: normal;
+  line-height: 1.2;
+  color: var(--pencil);
+}
+/* The notes: handwritten number, text in blue EB Garamond italic. */
+.editor-card .note {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 4px 12px 4px;
+  box-shadow: none;
+}
+.editor-card .notes-item + .notes-item .note {
+  border-top: 1px solid var(--border);
+}
+.editor-card .note[data-flash="true"],
+.editor-card .note:focus-visible {
+  background: var(--pencil-bg);
+}
+.editor-card .note-number {
+  min-width: 26px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-hand);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 0.8;
+  color: var(--pencil);
+}
+.editor-card .note-title {
+  font-family: var(--font-text);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+}
+.editor-card .note-text,
+.editor-card .note-quote,
+.editor-card .note-proposal {
+  font-family: var(--font-text);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--pencil);
+}
+.editor-card .note-quote {
+  color: var(--text-muted);
+}
+.editor-card .note-actions .note-primary {
+  background: var(--pencil);
+  color: var(--on-accent);
+}
+.editor-card .note-ignore {
+  border-color: var(--card-rule);
+  background: transparent;
+}
+/* At the bottom of the card: the pass's actions. */
+.editor-card > .pass-head,
+.editor-card > .signoff {
+  flex-shrink: 0;
+  margin: 0 26px;
+  padding: 14px 0 22px;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+.editor-card .pass-btn-primary {
+  background: var(--ink);
+  color: var(--card);
+}
+
+/* "Ask the editor": a box below the paragraph, in the card's style. */
+.ask-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  border: 1px solid var(--card-rule);
+  outline: 1px solid var(--card-rule);
+  outline-offset: -5px;
+  border-radius: 2px;
+  background: var(--card);
+  box-shadow: var(--shadow-1-hover);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  color: var(--text);
+  white-space: normal;
+}
+.ask-head {
+  display: flex;
+  align-items: center;
+}
+.ask-title {
+  flex: 1;
+  font-family: var(--font-text);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ask-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+}
+.ask-quote {
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+.ask-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.ask-label {
+  min-width: 64px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.ask-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--card-rule);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pencil);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+}
+.ask-btn:hover:not(:disabled) {
+  background: var(--pencil-bg);
+}
+.ask-card .rewrite {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.ask-card .rewrite-text {
+  font-family: var(--font-text);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--pencil);
+}
+
+/* The sign-off: the author's signature in ink, the blind stamp on the page. */
+.editor-card .signoff {
+  gap: 14px;
+  padding: 14px 0 22px;
+}
+.signature {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.signature-label {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.signature-hand {
+  padding: 4px 6px 2px;
+  border-bottom: 1px solid var(--card-rule);
+  font-family: var(--font-signature);
+  font-size: 40px;
+  line-height: 1.3;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.signature-date {
+  font-family: var(--font-text);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.editor-card .record {
+  font-family: var(--font-text);
+}
+.dry-stamp {
+  position: absolute;
+  top: 18px;
+  right: 30px;
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  pointer-events: none;
+  /* Embossed: light at the top left, shadow at the bottom right, the paper's colour. */
+  filter: drop-shadow(-1px -1px 0 rgb(255 255 255 / 0.95))
+    drop-shadow(1px 1.2px 0 rgb(110 80 40 / 0.38));
+  transform: rotate(-14deg);
+  font-family: var(--font-text);
+}
+.dry-stamp circle {
+  stroke: var(--code-bg);
+}
+.dry-stamp text {
+  fill: var(--code-bg);
+}
+.editor-card .notes-count {
+  white-space: nowrap;
+}
+
+/* "Handwriting" (Write): the author's text by hand, the same script as the editor's letter but
+   in ink (blue stays the editor's). On the scroller and not on the content: the mirror that
+   counts off-screen lines lives there. */
+.shell[data-hand="true"] .cm-scroller {
+  font-family: var(--font-hand);
+  font-size: var(--hand-size);
+  line-height: var(--hand-line);
+}
+
+/* ── Animations: short, never blocking. The resting state is the final one: with "Reduce
+   motion" (the rule at the top) everything appears already still. ──────────────────────── */
+
+/* The marks of newly arrived notes: the pencil draws a line from left to right, then the real
+   mark (wavy, dotted) settles in its place. One line for each line of the stretch. */
+.cm-j-draw {
+  background-image: linear-gradient(var(--pencil), var(--pencil));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 0;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: mark-draw 650ms var(--ease-out) var(--draw-delay, 0ms) both;
+}
+.cm-j-draw.cm-j-fact-ok {
+  background-image: linear-gradient(var(--fact-ok), var(--fact-ok));
+}
+@keyframes mark-draw {
+  0% {
+    background-size: 0 1.5px;
+    text-decoration-color: transparent;
+  }
+  70% {
+    background-size: 100% 1.5px;
+    text-decoration-color: transparent;
+  }
+  100% {
+    background-size: 100% 0;
+  }
+}
+
+/* Newly arrived notes, one at a time (NotesPanel gives the delay). */
+.notes-item .note {
+  animation-delay: var(--note-delay, 0ms);
+}
+
+/* "The editor is writing…" while the model works. */
+.letter-writing {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--pencil);
+}
+.letter-dots span {
+  animation: dot 1.2s ease-in-out infinite both;
+}
+.letter-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.letter-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dot {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* The letter that just arrived writes itself: each word is uncovered left to right when the pen
+   reaches it (timings and delays from LetterText). Only during the stroke: afterwards, no
+   clipping, so the script's tails and flourishes stay whole. */
+.letter-text .w,
+.first-words .w {
+  display: inline-block;
+}
+[data-writing="true"] .w {
+  animation-name: write-in;
+  animation-timing-function: linear;
+  animation-fill-mode: backwards;
+}
+@keyframes write-in {
+  /* From empty: the negative left margin, for the flourishes, must not uncover anything early. */
+  from {
+    clip-path: inset(-0.6em calc(100% + 0.6em) -0.6em -0.6em);
+  }
+  to {
+    clip-path: inset(-0.6em -0.6em -0.6em -0.6em);
+  }
+}
+
+/* The sign-off just given: the nib writes «Visto, si stampi», then the date, then the blind stamp
+   is pressed into the corner of the page. */
+/* The nib sits next to the ink, not inside: the writing's clipping would hide it. */
+.signature-pen {
+  position: relative;
+  display: inline-block;
+}
+.signature-ink {
+  display: inline-block;
+}
+.nib {
+  position: absolute;
+  bottom: 0.35em;
+  left: 0;
+  width: 18px;
+  height: 36px;
+  opacity: 0;
+  transform-origin: 50% 100%;
+  transform: translate(-50%, 0) rotate(28deg);
+  pointer-events: none;
+}
+.nib path {
+  fill: var(--ink-2);
+}
+.nib .nib-slit {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 0.9;
+}
+.nib .nib-hole {
+  fill: var(--paper);
+}
+.signature[data-fresh="true"] .signature-ink {
+  animation: write-in 1300ms cubic-bezier(0.45, 0.05, 0.55, 0.95) 150ms backwards;
+}
+.signature[data-fresh="true"] .nib {
+  /* The same timing and pace as the ink, then the nib lifts. */
+  animation:
+    nib-write 1300ms cubic-bezier(0.45, 0.05, 0.55, 0.95) 150ms both,
+    nib-lift 300ms var(--ease-out) 1450ms forwards;
+}
+@keyframes nib-write {
+  0% {
+    left: 0;
+    opacity: 1;
+    transform: translate(-50%, -1px) rotate(28deg);
+  }
+  30% {
+    transform: translate(-50%, 3px) rotate(24deg);
+  }
+  60% {
+    transform: translate(-50%, -3px) rotate(31deg);
+  }
+  100% {
+    left: 100%;
+    opacity: 1;
+    transform: translate(-50%, 1px) rotate(27deg);
+  }
+}
+@keyframes nib-lift {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 1px) rotate(27deg);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-30%, -12px) rotate(20deg);
+  }
+}
+.signature[data-fresh="true"] .signature-date {
+  animation: note-in 400ms var(--ease-out) 1450ms backwards;
+}
+.dry-stamp[data-fresh="true"] {
+  animation: stamp-press 420ms var(--ease-out) 1700ms backwards;
+}
+@keyframes stamp-press {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) scale(1.25);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-14deg) scale(0.96);
+  }
+  100% {
+    transform: rotate(-14deg) scale(1);
+  }
+}
+
+/* ── The first start ─────────────────────────────────────────────────────────────────────── */
+.welcome {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 72px;
+  padding: 96px 40px 48px;
+  background: var(--desk-texture), var(--desk);
+  color: var(--text);
+}
+.welcome-intro {
+  flex: 0 1 400px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding-top: 30px;
+}
+.welcome-intro h1 {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 60px;
+  line-height: 1;
+  font-weight: var(--fw-medium);
+}
+.welcome-motto {
+  margin: 10px 0 0;
+  font-family: var(--font-text);
+  font-style: italic;
+  font-size: 24px;
+  line-height: 1.3;
+  color: var(--text-2);
+}
+.welcome-promises {
+  list-style: none;
+  margin: 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-text);
+  font-size: 18px;
+  line-height: 1.4;
+}
+.welcome-promises li {
+  display: flex;
+  gap: 14px;
+}
+.welcome-promises svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--line-number);
+}
+.welcome-deck {
+  position: relative;
+  flex: 0 1 660px;
+  min-width: 0;
+  margin-top: 30px;
+}
+.welcome-tabs {
+  position: absolute;
+  z-index: 2;
+  top: -29px;
+  left: 18px;
+  display: flex;
+  gap: 4px;
+  transform: rotate(0.4deg);
+  transform-origin: left bottom;
+}
+.welcome-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px 7px 0 0;
+  background: var(--code-bg);
+  color: var(--text-muted);
+  font: var(--fw-medium) var(--fs-small) var(--font-ui);
+}
+.welcome-tab:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.welcome-tab[aria-selected="true"] {
+  padding: 7px 14px 6px;
+  background: var(--card);
+  color: var(--text);
+  font-weight: var(--fw-bold);
+}
+.welcome-tick {
+  font-family: var(--font-hand);
+  font-size: 22px;
+  line-height: 0;
+  color: var(--pencil);
+}
+.welcome-behind {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: var(--card);
+  box-shadow: var(--shadow-1-hover);
+  transform: translate(10px, 12px) rotate(1.4deg);
+}
+.welcome-card {
+  position: relative;
+  z-index: 1;
+  padding: 10px;
+  border-radius: 2px;
+  background: var(--card);
+  box-shadow: var(--shadow-sheet);
+  animation: welcome-deal 600ms var(--ease-out) both;
+}
+@keyframes welcome-deal {
+  from {
+    opacity: 0;
+    transform: translate(60px, -24px) rotate(6deg);
+  }
+}
+.welcome-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 34px 28px;
+  border: 1px solid var(--card-rule);
+  outline: 1px solid var(--card-rule);
+  outline-offset: -5px;
+}
+.welcome-card h2 {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: var(--fw-medium);
+}
+.welcome-note {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.welcome code {
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+}
+.welcome-muted {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.welcome-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.welcome-choice {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.welcome-choice[data-checked="true"] {
+  border-color: var(--card-rule);
+  background: var(--paper);
+}
+.welcome-choice input[type="radio"] {
+  margin-top: 4px;
+  accent-color: var(--ink);
+}
+.welcome-choice-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+}
+.welcome-choice-text strong {
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+.welcome-path {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.welcome-path input,
+.welcome-address input {
+  flex: 1;
+  min-width: 200px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: 13px var(--font-mono);
+}
+.welcome-address input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.welcome-found {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: var(--text);
+  animation: note-in 400ms var(--ease-out) both;
+}
+.welcome-found strong {
+  font-size: inherit;
+}
+.welcome-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--card-rule);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font: var(--fw-medium) var(--fs-body) var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.welcome-btn-primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  padding: 8px 18px;
+}
+.welcome-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.welcome-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
+  text-decoration: underline;
+  text-decoration-color: var(--underline);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.welcome-address {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.welcome-address label {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.welcome-probe {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  font-size: var(--fs-body);
+  color: var(--text-2);
+  animation: note-in 400ms var(--ease-out) both;
+}
+.welcome-dot {
+  margin-right: 8px;
+  color: var(--fact-ok);
+}
+.welcome-words {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.first-words {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 38px;
+  line-height: 1.2;
+  color: var(--pencil);
+}
+.welcome-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--grammar-bg);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  animation: note-in 400ms var(--ease-out) both;
+}
+.welcome-alert-title {
+  color: var(--danger);
+}
+.welcome-command {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.welcome-error {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--danger);
+}
+
+/* "Three things to try": a card held with tape next to the sample page. */
+.tips-card {
+  position: relative;
+  flex: 0 0 230px;
+  align-self: flex-start;
+  box-sizing: border-box;
+  margin-top: 28px;
+  padding: 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 2px;
+  background: var(--paper);
+  box-shadow: var(--shadow-1-hover);
+  transform: rotate(-0.8deg);
+}
+.tips-tape {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 84px;
+  height: 22px;
+  background: var(--tape);
+  transform: translateX(-50%) rotate(2deg);
+}
+.tips-title {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 20px;
+  font-weight: var(--fw-medium);
+}
+.tips-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.tips-item label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.tips-item input {
+  margin-top: 2px;
+  accent-color: var(--pencil);
+}
+.tips-item[data-done="true"] span {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--pencil-soft);
+}
+.tips-note {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.tips-note code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+.tips-hide {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

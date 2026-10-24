@@ -1,0 +1,35 @@
+{
+  "name": "Documentation",
+  "shortName": "Documentation",
+  "sections": {
+    "intro": {
+      "title": "Introduction",
+      "guidance": "What it is for and who it is for."
+    },
+    "prerequisites": {
+      "title": "Prerequisites",
+      "guidance": "What you need before you start."
+    },
+    "procedure": {
+      "title": "Procedure",
+      "guidance": "The steps, in order."
+    },
+    "verification": {
+      "title": "Verification",
+      "guidance": "How to tell that it worked."
+    },
+    "known-issues": {
+      "title": "Known issues",
+      "guidance": "Common errors and fixes."
+    }
+  },
+  "checklist": {
+    "numbered-steps": "The steps are numbered.",
+    "commands-in-code": "Every command is in a code block.",
+    "has-verification": "There is a way to check the result."
+  },
+  "proseRules": [
+    "Imperative mood, one action per step.",
+    "No first person."
+  ]
+}

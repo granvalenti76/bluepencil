@@ -1,0 +1,13 @@
+{
+  "name": "@desk/desktop",
+  "private": true,
+  "type": "module",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "electron .",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "electron": "^44.5.1"
+  }
+}

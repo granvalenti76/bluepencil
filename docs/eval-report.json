@@ -1,0 +1,481 @@
+{
+  "date": "2026-10-03T04:34:23.947Z",
+  "model": "gemma-4-E4B-it-Q4_K_M.gguf",
+  "promptVersions": {
+    "structure": "s1-structure2",
+    "facts": "s1-facts3",
+    "grammar": "s1-grammar1",
+    "prose": "s1-prose1"
+  },
+  "contextVersion": "1",
+  "partial": true,
+  "passes": [
+    {
+      "pass": "structure",
+      "cases": 8,
+      "tp": 9,
+      "fp": 5,
+      "fn": 1,
+      "discarded": 0,
+      "precision": 0.6428571428571429,
+      "recall": 0.9,
+      "errors": 0,
+      "seconds": 276.3,
+      "enabled": false
+    },
+    {
+      "pass": "facts",
+      "cases": 8,
+      "tp": 8,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "precision": 0.8888888888888888,
+      "recall": 1,
+      "errors": 0,
+      "seconds": 154.3,
+      "enabled": true
+    },
+    {
+      "pass": "grammar",
+      "cases": 8,
+      "tp": 10,
+      "fp": 0,
+      "fn": 3,
+      "discarded": 0,
+      "precision": 1,
+      "recall": 0.7692307692307693,
+      "errors": 0,
+      "seconds": 147.365,
+      "enabled": true
+    },
+    {
+      "pass": "prose",
+      "cases": 8,
+      "tp": 6,
+      "fp": 1,
+      "fn": 2,
+      "discarded": 0,
+      "precision": 0.8571428571428571,
+      "recall": 0.75,
+      "errors": 0,
+      "seconds": 174.577,
+      "enabled": true
+    }
+  ],
+  "cases": [
+    {
+      "pass": "structure",
+      "file": "01-lead-senza-perche.md",
+      "tp": 1,
+      "fp": 2,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 36.9,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "02-senza-chiusura.md",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 34.3,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "03-completo.md",
+      "tp": 0,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 39.9,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "04-cifre-e-opinioni.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 41.4,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "05-blog-senza-punto-di-vista.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 24.5,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "06-blog-conclusione-vuota.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 23.1,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "07-report-senza-limiti.md",
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 39,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "structure",
+      "file": "08-docs-passi.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 37.2,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "01-verificato-e-senza-fonte.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 21.4,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "02-data-diversa.md",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 30.8,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "03-sigla-diversa.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 20.5,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "04-nota-a-pie.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 15.6,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "05-valutazione.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 15.5,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "06-senza-fonti.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 14.7,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "07-causa.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 24.4,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "facts",
+      "file": "08-opinioni.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 11.4,
+      "reasoningTokens": 0
+    },
+    {
+      "pass": "grammar",
+      "file": "01-apostrofi.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 16.719,
+      "reasoningTokens": 477
+    },
+    {
+      "pass": "grammar",
+      "file": "02-accordi.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 20.31,
+      "reasoningTokens": 632
+    },
+    {
+      "pass": "grammar",
+      "file": "03-qual-e.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 25.092,
+      "reasoningTokens": 840
+    },
+    {
+      "pass": "grammar",
+      "file": "04-pulito.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 12.948,
+      "reasoningTokens": 530
+    },
+    {
+      "pass": "grammar",
+      "file": "05-accenti.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "discarded": 0,
+      "missed": [
+        {
+          "quote": "nuova e più veloce",
+          "note": "è più veloce (verbo)"
+        }
+      ],
+      "wrong": [],
+      "seconds": 14.647,
+      "reasoningTokens": 504
+    },
+    {
+      "pass": "grammar",
+      "file": "06-punteggiatura.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 2,
+      "discarded": 0,
+      "missed": [
+        {
+          "quote": "nè su Linux",
+          "note": "né"
+        },
+        {
+          "quote": "nè su Windows",
+          "note": "né"
+        }
+      ],
+      "wrong": [],
+      "seconds": 17.029,
+      "reasoningTokens": 586
+    },
+    {
+      "pass": "grammar",
+      "file": "07-nomi-tecnici.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 12.709,
+      "reasoningTokens": 505
+    },
+    {
+      "pass": "grammar",
+      "file": "08-pronomi.md",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 27.911,
+      "reasoningTokens": 937
+    },
+    {
+      "pass": "prose",
+      "file": "01-avverbi.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "discarded": 0,
+      "missed": [
+        {
+          "quote": "praticamente",
+          "type": "adverb"
+        }
+      ],
+      "wrong": [],
+      "seconds": 19.961,
+      "reasoningTokens": 687
+    },
+    {
+      "pass": "prose",
+      "file": "02-ripetizione.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 16.926,
+      "reasoningTokens": 568
+    },
+    {
+      "pass": "prose",
+      "file": "03-frase-lunga.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 33.742,
+      "reasoningTokens": 1138
+    },
+    {
+      "pass": "prose",
+      "file": "04-passivo.md",
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [
+        {
+          "quote": "e il gruppo ha tolto metà dei pulsanti.",
+          "type": "repetition"
+        }
+      ],
+      "seconds": 27.691,
+      "reasoningTokens": 890
+    },
+    {
+      "pass": "prose",
+      "file": "05-pulito.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 13.333,
+      "reasoningTokens": 541
+    },
+    {
+      "pass": "prose",
+      "file": "06-stile-autore.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 18.237,
+      "reasoningTokens": 602
+    },
+    {
+      "pass": "prose",
+      "file": "07-misto.md",
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "discarded": 0,
+      "missed": [
+        {
+          "quote": "assolutamente",
+          "type": "adverb"
+        }
+      ],
+      "wrong": [],
+      "seconds": 28.273,
+      "reasoningTokens": 1002
+    },
+    {
+      "pass": "prose",
+      "file": "08-pulito-tecnico.md",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "discarded": 0,
+      "missed": [],
+      "wrong": [],
+      "seconds": 16.414,
+      "reasoningTokens": 672
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Report",
+  "shortName": "Report",
+  "sections": {
+    "summary": {
+      "title": "Summary",
+      "guidance": "Goal and main findings."
+    },
+    "method": {
+      "title": "Method",
+      "guidance": "How the data was collected and read."
+    },
+    "results": {
+      "title": "Results",
+      "guidance": "What emerged, with the numbers."
+    },
+    "limits": {
+      "title": "Limitations",
+      "guidance": "What the work cannot tell."
+    },
+    "conclusions": {
+      "title": "Conclusions",
+      "guidance": "What follows from it."
+    }
+  },
+  "checklist": {
+    "summary-results": "The summary contains the results.",
+    "has-limits": "The limitations are stated.",
+    "figures-sourced": "The numbers have a source."
+  },
+  "proseRules": [
+    "Neutral register.",
+    "Numbers always with units and a reference."
+  ]
+}

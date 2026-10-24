@@ -1,0 +1,26 @@
+{
+  "name": "Blog post",
+  "shortName": "Blog post",
+  "sections": {
+    "opening": {
+      "title": "Opening",
+      "guidance": "A hook and the topic of the post."
+    },
+    "body": {
+      "title": "Body",
+      "guidance": "The story or the argument, with examples."
+    },
+    "conclusion": {
+      "title": "Conclusion",
+      "guidance": "What the reader takes away."
+    }
+  },
+  "checklist": {
+    "point-of-view": "There is a declared point of view.",
+    "closing-call": "There is a final call to action or a conclusion."
+  },
+  "proseRules": [
+    "Direct tone, first person is fine.",
+    "Short paragraphs."
+  ]
+}

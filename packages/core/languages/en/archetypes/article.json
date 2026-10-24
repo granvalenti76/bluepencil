@@ -1,0 +1,33 @@
+{
+  "name": "News article",
+  "shortName": "Article",
+  "sections": {
+    "lead": {
+      "title": "Lead",
+      "guidance": "Who, what, when, why: the essentials in a few lines."
+    },
+    "context": {
+      "title": "Context",
+      "guidance": "What the reader needs to understand the news."
+    },
+    "development": {
+      "title": "Development",
+      "guidance": "The facts, with sources, from most to least important."
+    },
+    "closing": {
+      "title": "Closing",
+      "guidance": "What happens next, or the conclusion."
+    }
+  },
+  "checklist": {
+    "lead-answers": "The lead answers who, what, when and why.",
+    "figures-sourced": "Every figure has a source.",
+    "has-closing": "There is a closing.",
+    "no-hidden-opinions": "No undeclared opinions."
+  },
+  "proseRules": [
+    "Short sentences.",
+    "No first person in the lead.",
+    "The most important fact first."
+  ]
+}

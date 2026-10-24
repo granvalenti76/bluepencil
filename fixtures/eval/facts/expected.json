@@ -1,0 +1,45 @@
+{
+  "pass": "facts",
+  "cases": [
+    {
+      "file": "01-verificato-e-senza-fonte.md",
+      "expected": [
+        { "quote": "circa 80 MB di memoria", "type": "verified" },
+        { "quote": "più usato in Europa", "type": "unsourced" }
+      ]
+    },
+    {
+      "file": "02-data-diversa.md",
+      "expected": [
+        { "quote": "12 marzo 2025", "type": "to_check", "note": "la fonte dice 21 marzo" }
+      ]
+    },
+    {
+      "file": "03-sigla-diversa.md",
+      "expected": [
+        { "quote": "Mistral-7B-v0.2", "type": "to_check", "note": "la fonte dice v0.3" }
+      ]
+    },
+    {
+      "file": "04-nota-a-pie.md",
+      "expected": [{ "quote": "fino a 64 connessioni contemporanee", "type": "verified" }]
+    },
+    {
+      "file": "05-valutazione.md",
+      "expected": [],
+      "note": "opinione dichiarata con la nota «Valutazione dell'autore»"
+    },
+    {
+      "file": "06-senza-fonti.md",
+      "expected": [{ "quote": "del 40%", "type": "unsourced" }]
+    },
+    {
+      "file": "07-causa.md",
+      "expected": [
+        { "quote": "scritto in Rust", "type": "verified" },
+        { "quote": "è dovuto al nuovo garbage collector", "type": "unsourced" }
+      ]
+    },
+    { "file": "08-opinioni.md", "expected": [] }
+  ]
+}
