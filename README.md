@@ -8,7 +8,7 @@ goes into the text only when you click, and every change can be undone (⌘Z or 
 
 Your `.md` files are the real data. The SQLite index next to them is only a cache.
 
-![Bluepencil in Review mode, on an Italian sample draft](docs/screens/m5.png)
+![Bluepencil in Write mode, with Handwriting on, on an Italian sample post](docs/screens/bluepencil.webp)
 
 ## Requirements
 
