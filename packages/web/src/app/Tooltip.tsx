@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { shortcut } from "./keys.ts";
 
 /** How long the mouse must rest before the tooltip appears (like SwiftUI's `.help`). */
 const DELAY_MS = 450;
@@ -26,8 +27,9 @@ export function TooltipLayer() {
 
   useEffect(() => {
     const show = (el: Element) => {
-      const text = el.getAttribute("data-tip");
-      if (!text) return;
+      const tip = el.getAttribute("data-tip");
+      if (!tip) return;
+      const text = shortcut(tip);
       const r = el.getBoundingClientRect();
       setTip({ text, x: r.left + r.width / 2, top: r.top, bottom: r.bottom });
     };

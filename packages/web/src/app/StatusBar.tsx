@@ -4,6 +4,7 @@ import { useUi } from "./store.ts";
 import { useDoc } from "./docStore.ts";
 import { useModel } from "./modelStore.ts";
 import { progressText, useReview } from "./review.ts";
+import { isMac, shortcut } from "./keys.ts";
 
 /**
  * Status bar cut down to the essentials: how the review went and which model is working. Words
@@ -34,14 +35,14 @@ function ShowMarkdown({ view }: { view: EditorView | null }) {
       type="button"
       className="show-md"
       aria-pressed={shown}
-      aria-keyshortcuts="Alt+Meta+M"
+      aria-keyshortcuts={isMac ? "Alt+Meta+M" : "Control+Alt+M"}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => {
         toggleShowMarkdown(view);
         view.focus();
       }}
     >
-      Show Markdown <kbd>⌥⌘M</kbd>
+      Show Markdown <kbd>{shortcut("⌥⌘M")}</kbd>
     </button>
   );
 }

@@ -158,7 +158,7 @@ function buildMenu() {
             id: "notes",
             label: "Review Mode",
             type: "checkbox",
-            ...shown("Ctrl+Cmd+N"),
+            ...shown(process.platform === "darwin" ? "Ctrl+Cmd+N" : "Ctrl+Alt+N"),
             click: () => send("toggle-notes"),
           },
           { type: "separator" },

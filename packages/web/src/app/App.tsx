@@ -28,6 +28,7 @@ import { syncRewrite } from "./rewrite.ts";
 import { ConflictBanner } from "./ConflictBanner.tsx";
 import { connectEvents } from "./events.ts";
 import { TooltipLayer } from "./Tooltip.tsx";
+import { ctrlMod, mod } from "./keys.ts";
 import { useDoc } from "./docStore.ts";
 import { initToken } from "./api.ts";
 import { Preview } from "../preview/Preview.tsx";
@@ -129,21 +130,19 @@ export function App() {
     if (token) void authorship.attach(view, view ? doc.path : null);
   }, [token, view, doc.path]);
 
-  // ⌘O (and ⌃⌘S) the drafts, ⌃⌘N Write / Review, ⇧⌘P preview, Esc leaves Focus.
+  // ⌘O (and ⌃⌘S) the drafts, ⌃⌘N Write / Review, ⇧⌘P preview, Esc leaves Focus (Ctrl and
+  // Ctrl+Alt off macOS: keys.ts).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       const ui = useUi.getState();
-      if (
-        (e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && k === "o") ||
-        (e.metaKey && e.ctrlKey && k === "s")
-      ) {
+      if ((mod(e) && !e.shiftKey && !e.altKey && k === "o") || (ctrlMod(e) && k === "s")) {
         e.preventDefault();
         ui.setDrafts();
-      } else if (e.metaKey && e.ctrlKey && k === "n") {
+      } else if (ctrlMod(e) && k === "n") {
         e.preventDefault();
         ui.setMode(ui.mode === "review" ? "write" : "review");
-      } else if (e.metaKey && e.shiftKey && !e.ctrlKey && k === "p") {
+      } else if (mod(e) && e.shiftKey && k === "p") {
         e.preventDefault();
         ui.togglePreview();
       } else if (k === "escape" && ui.draftsOpen) {
@@ -164,7 +163,12 @@ export function App() {
   // Cmd+S saves at once
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !(e.metaKey && e.ctrlKey) && e.key.toLowerCase() === "s") {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        !(e.metaKey && e.ctrlKey) &&
+        !ctrlMod(e) &&
+        e.key.toLowerCase() === "s"
+      ) {
         e.preventDefault();
         void session.saveNow();
       }

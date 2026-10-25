@@ -21,6 +21,7 @@ import { packFor } from "./languages.ts";
 import { useMenu } from "./Menu.tsx";
 import { Marked } from "./SourcePanels.tsx";
 import { useUi } from "./store.ts";
+import { shortcut } from "./keys.ts";
 
 /** The styles menu: every item with its look and its shortcut. */
 const STYLES: [BlockStyle, string, string][] = [
@@ -141,7 +142,7 @@ function StyleMenu({
               }}
             >
               <span className="style-sample">{name}</span>
-              {keys && <kbd>{keys}</kbd>}
+              {keys && <kbd>{shortcut(keys)}</kbd>}
             </button>
           ))}
         </div>

@@ -10,6 +10,7 @@ import { HandText } from "./HandText.tsx";
 import { lastLanguage } from "./lastLanguage.ts";
 import { useLanguages } from "./languages.ts";
 import { openSample } from "./tips.ts";
+import { shortcut } from "./keys.ts";
 
 /**
  * The first start: a single screen, on the desk. On the left the welcome, on the right the
@@ -41,7 +42,9 @@ export function Welcome({ state }: { state: WelcomeState }) {
           </li>
           <li>
             <PencilGlyph />
-            <span>It suggests, you decide. Every change is one click, and ⌘Z undoes it.</span>
+            <span>
+              It suggests, you decide. Every change is one click, and {shortcut("⌘Z")} undoes it.
+            </span>
           </li>
         </ul>
       </section>
@@ -221,7 +224,7 @@ function FolderStep({ state }: { state: WelcomeState }) {
         </p>
       )}
       <Footer
-        hint="You can change this later in Settings (⌘,)"
+        hint={shortcut("You can change this later in Settings (⌘,)")}
         action={
           <button
             type="button"
@@ -371,7 +374,7 @@ function EditorStep({ state }: { state: WelcomeState }) {
               Write without the editor for now
             </button>
           ) : (
-            "You can connect later in Settings (⌘,)"
+            shortcut("You can connect later in Settings (⌘,)")
           )
         }
         action={

@@ -14,7 +14,8 @@ https://github.com/user-attachments/assets/58778e44-0551-4a18-92d9-1168089b64d2
 
 ## Requirements
 
-- macOS, Node.js 22.18 or later, git.
+- macOS or Linux, Node.js 22.18 or later, git. Bluepencil is designed on macOS; on Linux the
+  desktop app runs as is (tried by hand, the tests run on macOS).
 - A llama-server on your local network. Optional: without it you can still write, but there is
   no structure or review.
 
@@ -46,6 +47,8 @@ already use), tries the llama-server address (you can skip it) and opens a sampl
 things to try. It does not run again: change the folder and the model later in **Settings**.
 
 In the desktop app, **Help ▸ Bluepencil Help** opens a short guide with all the shortcuts.
+Shortcuts are written the macOS way; on Linux ⌘ is Ctrl and ⌃⌘ or ⌥⌘ is Ctrl+Alt (⌘O → Ctrl+O,
+⌃⌘N → Ctrl+Alt+N), and the app shows them that way.
 
 ## How it works
 
@@ -157,6 +160,8 @@ The code is an npm workspace:
   ignored notes, the check cache and word-count history.
 - Web sources are not downloaded: copy what matters into a source file.
 - In the browser, browser shortcuts (⌘W, ⌘R) still belong to the browser.
+- On Linux there is no folder picker: type the path of the folder in the first start and in
+  Settings.
 - The desktop app uses the system Node.js for its server: it is not yet a distributable package.
 - Hemingway mode has a switch but does not block deletions yet.
 - Typewriter scrolling works only together with Focus.

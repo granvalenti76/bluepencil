@@ -12,6 +12,7 @@ import { useDialog } from "./dialogs.ts";
 import { passes, usePasses } from "./passes.ts";
 import { fraction, progressText, review, STEP_LABEL, useReview } from "./review.ts";
 import { useJudgments, useUi } from "./store.ts";
+import { isMac, shortcut } from "./keys.ts";
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
   saved: "Saved",
@@ -90,7 +91,7 @@ function DocTitle() {
       className="drafts-btn"
       aria-label="Drafts"
       aria-expanded={draftsOpen || (!path && !loading)}
-      aria-keyshortcuts="Meta+O"
+      aria-keyshortcuts={isMac ? "Meta+O" : "Control+O"}
       data-tip="All drafts · ⌘O"
       onClick={() => setDrafts()}
     >
@@ -204,7 +205,7 @@ function ViewMenu() {
               {on ? "✓" : ""}
             </span>
             {label}
-            {keys && <kbd>{keys}</kbd>}
+            {keys && <kbd>{shortcut(keys)}</kbd>}
           </button>
         ))
       }

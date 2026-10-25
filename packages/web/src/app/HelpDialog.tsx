@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { shortcut } from "./keys.ts";
 
 const SHORTCUTS: [string, string][] = [
   ["⌘N", "New draft (desktop app)"],
@@ -57,21 +58,21 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <p>
             Every <code>.md</code> file in the folder is a text: the files are the real data, so you
             can edit, copy or back them up with any tool. A file that another text cites (in its
-            sources or a footnote) is a <em>source</em>. <em>⌘O</em> or the name at the top opens
-            your drafts; <em>+ New</em> starts one. The type of text and a plan of the sections are
-            optional: tick <em>Plan the sections first</em>, or use <em>Plan the sections</em> in
-            the outline later.
+            sources or a footnote) is a <em>source</em>. <em>{shortcut("⌘O")}</em> or the name at
+            the top opens your drafts; <em>+ New</em> starts one. The type of text and a plan of the
+            sections are optional: tick <em>Plan the sections first</em>, or use{" "}
+            <em>Plan the sections</em> in the outline later.
           </p>
 
           <h3>Write</h3>
           <p>
             The page shows your text as it will read: the Markdown hides and comes back on the line
-            you are editing (<em>Show Markdown</em>, ⌥⌘M, shows it all). Each line on the page has
-            its number. The bar above the page formats the text, adds links, images, tables and
-            sources; <em>Ask the editor</em> on a selection offers to rephrase it (concise, clearer,
-            smoother, creative) or to check it — the proposals go in only with <em>Use this</em>.
-            The outline next to the page shows each section against its target. Focus, Handwriting
-            and Typing sounds are in the <em>View</em> menu.
+            you are editing (<em>Show Markdown</em>, {shortcut("⌥⌘M")}, shows it all). Each line on
+            the page has its number. The bar above the page formats the text, adds links, images,
+            tables and sources; <em>Ask the editor</em> on a selection offers to rephrase it
+            (concise, clearer, smoother, creative) or to check it — the proposals go in only with{" "}
+            <em>Use this</em>. The outline next to the page shows each section against its target.
+            Focus, Handwriting and Typing sounds are in the <em>View</em> menu.
           </p>
 
           <h3>Review and the editor’s card</h3>
@@ -82,7 +83,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
             notes, with the same number pencilled on the page next to its passage — click either to
             jump to the other. Use the note’s main button to apply a suggestion, <em>Ignore</em> to
             dismiss it, <em>Undo</em> to put the text back. Grammar fixes are proofreading marks and
-            change nothing until you accept them (<em>Accept all</em> takes them in one go; one ⌘Z
+            change nothing until you accept them (<em>Accept all</em> takes them in one go; one{" "}
+            {shortcut("⌘Z")}
             undoes them). <em>Finish pass</em> or <em>Skip</em> moves on to the next pass. The prose
             pass also shows readability and your habits; elsewhere, click <em>Readability</em> on
             the card to see them.
@@ -110,12 +112,12 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
 
           <h3>Settings</h3>
           <p>
-            <em>Bluepencil ▸ Settings…</em> (⌘,) sets the folder of your texts, the publish folder,
-            the address of the editor (llama-server, OpenAI-compatible), the languages and, if one
-            is configured, the cloud model. Each text has a language, chosen when you create it: it
-            decides the language of the editor’s notes and the readability index. To add one, use{" "}
-            <em>Languages ▸ New language…</em>. Nothing leaves your computer except requests to the
-            editor, and to the cloud only while you turn it on.
+            <em>Bluepencil ▸ Settings…</em> ({shortcut("⌘,")}) sets the folder of your texts, the
+            publish folder, the address of the editor (llama-server, OpenAI-compatible), the
+            languages and, if one is configured, the cloud model. Each text has a language, chosen
+            when you create it: it decides the language of the editor’s notes and the readability
+            index. To add one, use <em>Languages ▸ New language…</em>. Nothing leaves your computer
+            except requests to the editor, and to the cloud only while you turn it on.
           </p>
 
           <h3>Keyboard shortcuts</h3>
@@ -124,7 +126,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
               {SHORTCUTS.map(([keys, what]) => (
                 <tr key={keys}>
                   <td>
-                    <kbd>{keys}</kbd>
+                    <kbd>{shortcut(keys)}</kbd>
                   </td>
                   <td>{what}</td>
                 </tr>
