@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EditorView } from "@codemirror/view";
 import { EditorView as View } from "@codemirror/view";
-import { detectLanguage } from "@desk/core";
+import { detectLanguage, isStylePath } from "@desk/core";
 import { Editor } from "../editor/Editor.tsx";
 import {
   judgmentClick,
@@ -50,6 +50,11 @@ import { HelpDialog } from "./HelpDialog.tsx";
 import { NewDraftDialog } from "./NewDraftDialog.tsx";
 import { PublishDialog } from "./PublishDialog.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
+import { StylePanel } from "./StylePanel.tsx";
+import { StyleOverlays } from "./StyleLibrary.tsx";
+import { styles } from "./styles.ts";
+import { useMode } from "./mode.ts";
+import { cueMarks } from "../editor/cueMarks.ts";
 
 /** The open dialog, from the bar, the app menu or a shortcut (one at a time). */
 function Dialogs({ onCreated }: { onCreated: (path: string) => void }) {
@@ -223,7 +228,13 @@ export function App() {
         syncRewrite(u);
         authorship.onUpdate(u);
       }),
-      selectionActions({ bodyOffset: doc.bodyOffset }),
+      selectionActions({
+        bodyOffset: doc.bodyOffset,
+        // A style's own text is already a style: "To a style" is for the other texts.
+        onStyle:
+          doc.path && !isStylePath(doc.path) ? (text) => styles.addSelection(text) : undefined,
+      }),
+      cueMarks(),
       askBox((host) => useAsk.setState({ host })),
       statusListener(
         (changes) => persistStatusChanges(changes, doc.bodyOffset),
@@ -247,7 +258,8 @@ export function App() {
     view?.dispatch({ effects: setActiveJudgment.of(hoverId) });
   }, [view, hoverId]);
 
-  const mode = useUi((s) => s.mode);
+  const mode = useMode();
+  const isStyle = doc.path ? isStylePath(doc.path) : false;
   const focus = useUi((s) => s.focus);
   const hand = useUi((s) => s.handwriting) && mode === "write";
   // The font changes outside CodeMirror: line heights must be measured again.
@@ -258,6 +270,8 @@ export function App() {
   // With no open draft the list stays open: it is the only thing to do.
   const draftsOpen = useUi((s) => s.draftsOpen) || (!doc.path && !doc.loading);
   const inReview = mode === "review";
+  const inStyle = mode === "style";
+  const inWrite = mode === "write";
 
   if (!token) {
     return (
@@ -302,7 +316,7 @@ export function App() {
             <>
               <DeskBar view={view} />
               <div className="desk">
-                {!inReview && !focus && !preview && <OutlineCard view={view} />}
+                {inWrite && !focus && !preview && !isStyle && <OutlineCard view={view} />}
                 <div className="editor-area">
                   {preview && (
                     <Preview
@@ -327,13 +341,15 @@ export function App() {
                   </div>
                 </div>
                 {inReview && <NotesPanel view={view} />}
-                {!inReview && !focus && !preview && <TipsCard />}
+                {(inStyle || isStyle) && !preview && <StylePanel view={view} />}
+                {inWrite && !isStyle && !focus && !preview && <TipsCard />}
               </div>
             </>
           )}
         </div>
       </main>
       <StatusBar view={view} />
+      <StyleOverlays />
       <Dialogs
         // The server's own writes raise no SSE events: the list must be refreshed by hand.
         onCreated={(path) => {
@@ -351,7 +367,7 @@ export function App() {
  * Write the formatting bar, in Review an invitation to start.
  */
 function DeskBar({ view }: { view: EditorView | null }) {
-  const mode = useUi((s) => s.mode);
+  const mode = useMode();
   const focus = useUi((s) => s.focus);
   const active = usePasses((s) => isActive(s));
   if (focus) return null;
@@ -359,6 +375,15 @@ function DeskBar({ view }: { view: EditorView | null }) {
     return (
       <div className="desk-bar">
         <FormatBar view={view} />
+      </div>
+    );
+  }
+  if (mode === "style") {
+    return (
+      <div className="desk-bar">
+        <span className="desk-bar-hint">
+          The draft beside a style you look at: cues, not corrections. The text is yours to change.
+        </span>
       </div>
     );
   }

@@ -2379,3 +2379,691 @@ details.outline[open] > summary::before {
   text-underline-offset: 3px;
   cursor: pointer;
 }
+
+/* Style mode: the draft beside a style it looks at. Sienna, not the editor's pencil. */
+.style-card .panel-title {
+  color: var(--sienna-strong);
+}
+.style-choose {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 4px;
+}
+.style-lead {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.style-small {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.style-error {
+  margin: 8px 4px 0;
+  font-size: var(--fs-small);
+  color: var(--danger);
+}
+.style-list {
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+.style-list li + li {
+  border-top: 1px solid var(--border-soft);
+}
+.style-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.style-pick:hover {
+  background: var(--sienna-bg);
+}
+.style-pick-name,
+.style-name {
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--text);
+}
+.style-name {
+  font-size: 21px;
+}
+.style-new {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.style-new-row {
+  display: flex;
+  gap: 6px;
+  align-self: stretch;
+}
+.style-new-row input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+.style-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px 10px;
+}
+.style-head-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+.style-card .link-btn,
+.style-head-actions button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--fs-small);
+  color: var(--sienna-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--underline);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.style-print {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 6px 4px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.style-print-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.style-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.style-legend .style-dot {
+  position: static;
+  transform: none;
+}
+.style-band-key {
+  display: inline-block;
+  width: 14px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 3px;
+  background: var(--sienna-band);
+}
+.style-measure {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-small);
+}
+.style-measure-label {
+  color: var(--text-2);
+}
+.style-track {
+  position: relative;
+  height: 12px;
+  background: linear-gradient(var(--border-soft), var(--border-soft)) 0 50% / 100% 2px no-repeat;
+}
+.style-band {
+  position: absolute;
+  top: 3px;
+  height: 6px;
+  min-width: 3px;
+  border-radius: 3px;
+  background: var(--sienna-band);
+}
+.style-dot {
+  position: absolute;
+  top: 1px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--sienna);
+  background: var(--card);
+  transform: translateX(-50%);
+}
+.style-measure[data-out="high"] .style-dot,
+.style-measure[data-out="low"] .style-dot {
+  background: var(--sienna);
+}
+.style-measure-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.style-measure[data-out="high"] .style-measure-value,
+.style-measure[data-out="low"] .style-measure-value {
+  color: var(--sienna-strong);
+  font-weight: var(--fw-bold);
+}
+.style-traits,
+.style-tips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 4px 8px;
+}
+.style-traits ul {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.style-trait-list {
+  align-self: stretch;
+  list-style: none;
+  padding-left: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.style-trait-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.style-trait-text {
+  flex: 1;
+  min-width: 0;
+}
+.style-trait-list li[data-state="off"] .style-trait-text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.style-trait-list li[data-state="fixed"] .chip {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.style-quote {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.style-quote-draft {
+  color: var(--text-2);
+}
+.style-busy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.style-notes {
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.style-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.style-note-text {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.style-number {
+  flex-shrink: 0;
+  font-family: var(--font-text);
+  font-style: italic;
+  color: var(--sienna);
+}
+/* Cues are not the editor's pencil: ink, upright. */
+.notes-list .style-note .note-text {
+  font-style: normal;
+  color: var(--text);
+}
+.style-card .btn-primary {
+  background: var(--sienna);
+}
+.mode-btn[aria-pressed="true"]:last-child {
+  color: var(--sienna-strong);
+}
+/* "Look at" in the draft's title bar: the style it looks at. */
+.look-at {
+  position: relative;
+}
+.look-at-btn {
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: var(--fs-caption);
+  color: var(--text-2);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.look-at-btn[data-set="true"] {
+  border-color: var(--sienna);
+  background: var(--sienna-bg);
+  color: var(--sienna-strong);
+  font-weight: var(--fw-bold);
+}
+.look-at-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  width: 340px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--card-rule);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow-2);
+}
+.look-at-head {
+  padding: 8px 10px 4px;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.look-at-empty {
+  padding: 2px 10px 6px;
+}
+.look-at-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.look-at-item:hover,
+.look-at-item[aria-checked="true"] {
+  background: var(--sienna-bg);
+}
+.look-at-mark {
+  flex: 0 0 12px;
+  color: var(--sienna);
+  font-size: 11px;
+  line-height: 20px;
+}
+.look-at-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.look-at-name {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--text);
+}
+.look-at-foot {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--border-soft);
+}
+.style-row {
+  display: flex;
+  gap: 8px;
+}
+.style-checks {
+  list-style: none;
+  padding-left: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-ui) !important;
+  font-size: var(--fs-small) !important;
+}
+.style-checks li {
+  display: flex;
+  gap: 8px;
+}
+.style-check-mark {
+  flex: 0 0 12px;
+  font-weight: var(--fw-bold);
+  color: var(--text-faint);
+}
+.style-checks li[data-followed="true"] .style-check-mark {
+  color: var(--fact-ok);
+}
+.style-checks li[data-followed="false"] .style-check-mark {
+  color: var(--sienna);
+}
+.style-primary,
+.style-card .btn-primary {
+  background: var(--sienna);
+}
+
+/* The cues on the page: only in Style mode, in sienna, numbered like the cards. */
+.cm-cue-n {
+  display: none;
+}
+.shell[data-mode="style"] .cm-cue {
+  background: var(--sienna-bg);
+  border-bottom: 1.5px solid var(--sienna);
+}
+.shell[data-mode="style"] .cm-cue-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 3px;
+  border: 1.5px solid var(--sienna);
+  border-radius: 50%;
+  box-sizing: border-box;
+  vertical-align: 2px;
+  font-family: var(--font-text);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--sienna);
+}
+.cm-sel-style {
+  margin-left: 4px;
+  color: var(--sienna-strong);
+}
+
+/* A style file: its labels at the top of its card. */
+.style-labels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  padding: 6px 4px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.style-labels .link-btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.style-label-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.style-label-field input,
+.style-label-field select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  font: inherit;
+  font-size: var(--fs-small);
+  letter-spacing: 0;
+  color: var(--text);
+}
+
+/* The library: every style as a card. */
+.library-layer {
+  position: fixed;
+  inset: 53px 0 0;
+  z-index: 35;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(38 36 31 / 0.18);
+}
+.library {
+  width: min(1080px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 26px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--desk);
+  background-image: var(--desk-texture);
+  box-shadow: var(--shadow-2);
+  animation: pop 160ms var(--ease-out);
+}
+.library-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.library-head h2 {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 32px;
+  font-weight: 500;
+}
+.library-search {
+  width: 240px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font: inherit;
+  font-size: var(--fs-small);
+}
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.library-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 170px;
+  padding: 16px 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow-1);
+  text-align: left;
+  cursor: pointer;
+}
+.library-card:hover {
+  box-shadow: var(--shadow-1-hover);
+}
+.library-card[aria-current="true"] {
+  border-color: var(--sienna);
+}
+.library-card-name {
+  font-family: var(--font-text);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--text);
+}
+.library-card-quote {
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text-2);
+}
+.library-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.library-tag {
+  padding: 1px 8px;
+  border: 1px solid #e3c9b6;
+  border-radius: 10px;
+  background: var(--sienna-bg);
+  font-size: var(--fs-caption);
+  color: var(--sienna-strong);
+}
+.library-card-foot {
+  margin-top: auto;
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.library-new {
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--card-rule);
+  background: transparent;
+  box-shadow: none;
+  color: var(--sienna-strong);
+}
+.library-new-plus {
+  font-size: 26px;
+  line-height: 1;
+}
+.library-new-label {
+  font-weight: var(--fw-bold);
+}
+
+/* The "New style" and "To a style" windows. */
+.modal-wide {
+  width: min(680px, calc(100vw - 32px));
+}
+.style-labels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+.style-pieces {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.style-piece {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.style-piece legend {
+  padding: 0 4px;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sienna-strong);
+}
+.style-piece input,
+.style-piece textarea {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper);
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+.style-piece textarea {
+  resize: vertical;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.style-excerpt {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-left: 2px solid var(--sienna-band);
+  white-space: pre-wrap;
+}
+.style-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.style-targets legend {
+  padding: 0 4px;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.style-targets input {
+  accent-color: var(--sienna);
+}
+
+/* Links in the style's menu, card and label card: words, not buttons. */
+.look-at-foot .link-btn,
+.style-labels .link-btn,
+.style-card .link-btn,
+.modal .link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--sienna-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--underline);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.look-at-foot .link-btn:disabled {
+  color: var(--text-faint);
+  text-decoration: none;
+  cursor: default;
+}

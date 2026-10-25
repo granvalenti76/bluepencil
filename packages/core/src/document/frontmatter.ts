@@ -25,6 +25,8 @@ export const FrontMatterSchema = z.looseObject({
   style: z.array(z.string()).optional(),
   /** Language of the draft (`it`, `en`…); Italian if missing. An unknown code is kept. */
   lang: z.string().optional(),
+  /** The style the draft looks at: the path of a file in `Styles/`. */
+  reference: z.string().optional(),
   /** The author's sign-off: when, and on which body (sha256, 12 characters). */
   signoff: z.object({ at: z.string(), body: z.string() }).optional(),
 });

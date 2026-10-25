@@ -221,6 +221,45 @@ export const scriptedChat: ChatHandler = (body) => {
       "Mi presento in poche parole.",
     );
   }
+  // Styles, before the outline (the prompts open the same way); cues first: they mention traits too.
+  if (system.includes('"spunti"')) {
+    const draft = /<<<\n([\s\S]*?)\n>>>/.exec(user)?.[1] ?? "";
+    const quote = /[^\n#][^.!?\n]{20,}[.!?]/.exec(draft)?.[0]?.trim();
+    const example = /<<< [^\n]*\n([^.!?]+[.!?])/.exec(system)?.[1]?.trim();
+    return replyWith(
+      JSON.stringify({
+        // Every trait in the system message: the first one missing, the others followed.
+        tratti: [...system.matchAll(/^(\d+)\. /gm)].map((m, i) => ({
+          numero: Number(m[1]),
+          seguito: i > 0,
+          ...(i === 0 && quote ? { citazione: quote } : {}),
+        })),
+        spunti: quote
+          ? [
+              {
+                citazione: quote,
+                spunto: "Lo stile non apre su un giudizio: apre su una cosa vista.",
+                ...(example ? { esempio: example } : {}),
+              },
+            ]
+          : [],
+      }),
+      "Metto la bozza accanto allo stile.",
+    );
+  }
+  if (system.includes('"tratti"')) {
+    const first = /<<< [^\n]*\n([^.!?]+[.!?])/.exec(user)?.[1]?.trim();
+    return replyWith(
+      JSON.stringify({
+        tratti: [
+          { tratto: "Frasi brevi, spesso senza verbo.", ...(first ? { esempio: first } : {}) },
+          { tratto: "Apre su un dettaglio concreto, non sulla notizia." },
+          { tratto: "Numeri esatti al posto degli aggettivi." },
+        ],
+      }),
+      "Leggo gli spezzoni.",
+    );
+  }
   if (system.includes("caporedattore")) {
     return replyWith(outlineReply(user), "Parto dalle sezioni tipiche e le adatto al tema.");
   }

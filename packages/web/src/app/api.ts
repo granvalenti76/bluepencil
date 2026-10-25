@@ -8,6 +8,9 @@ import type {
   PassState,
   ScoreKind,
   SectionInfo,
+  StyleTip,
+  StyleTrait,
+  TraitCheck,
 } from "@desk/core";
 
 /** The token arrives in the fragment (`#t=…`): it is saved in sessionStorage and removed from the address. */
@@ -143,6 +146,31 @@ export interface Settings {
   canPick: boolean;
 }
 
+/** A style in the library (server: routes/styles.ts). */
+export interface StyleSummary {
+  path: string;
+  name: string;
+  author: string;
+  source: string;
+  lang?: string;
+  tags: string[];
+  pieces: number;
+  words: number;
+  traits: number;
+  quote: string;
+  usedIn: number;
+}
+
+/** What the "New style" window sends. */
+export interface NewStyle {
+  name: string;
+  lang: string;
+  author?: string;
+  source?: string;
+  tags?: string[];
+  pieces?: { title?: string; text: string }[];
+}
+
 export class ApiError extends Error {
   status: number;
   body: unknown;
@@ -153,9 +181,15 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: string,
+  url: string,
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const res = await fetch(url, {
     method,
+    signal,
     headers: {
       "X-Desk-Token": getToken() ?? "",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -231,6 +265,20 @@ export interface StoredLetter {
 }
 
 export const api = {
+  listStyles: async () => (await request<{ styles: StyleSummary[] }>("GET", "/api/styles")).styles,
+  createStyle: (style: NewStyle) =>
+    request<{ path: string; pieces: number }>("POST", "/api/styles", style),
+  addStylePiece: (path: string, text: string, title?: string) =>
+    request<{ path: string; pieces: number }>("POST", "/api/styles/piece", { path, text, title }),
+  readStyleTraits: (path: string, save: boolean, signal?: AbortSignal) =>
+    request<{ traits: StyleTrait[] }>("POST", "/api/styles/traits", { path, save }, signal),
+  styleTips: (style: string, draft: string, signal?: AbortSignal) =>
+    request<{ tips: StyleTip[]; checks: TraitCheck[] }>(
+      "POST",
+      "/api/styles/tips",
+      { style, draft },
+      signal,
+    ),
   listDrafts: async () => (await request<{ drafts: DraftRow[] }>("GET", "/api/drafts")).drafts,
   getDraft: (path: string) => request<DraftDetail>("GET", `/api/drafts/${enc(path)}`),
   /** "Clear suggestions": removes all the draft's notes (the text does not change). */

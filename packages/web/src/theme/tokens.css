@@ -55,6 +55,11 @@
   --desk-texture:
     repeating-linear-gradient(0deg, rgb(120 90 50 / 0.025) 0 1px, transparent 1px 3px),
     repeating-linear-gradient(90deg, rgb(120 90 50 / 0.025) 0 1px, transparent 1px 3px);
+  /* Styles: burnt sienna, not the editor's pencil (looking at a style is not editing). */
+  --sienna: #8a4b2a;
+  --sienna-strong: #6e3a1f;
+  --sienna-bg: #f6e6da;
+  --sienna-band: #e8d3c3;
   --fact-ok: #1b7f55;
   --fact: #9a5b00;
   --fact-bg: #fbf0d6;

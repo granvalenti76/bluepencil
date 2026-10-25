@@ -4,13 +4,15 @@ import type { BlockStyle } from "../editor/formatting.ts";
 import type { FilterType } from "../editor/judgmentsField.ts";
 
 /**
- * Write or Review: a browser preference, not part of the draft. You start by writing.
+ * Write, Review or Style: a browser preference, not part of the draft. You start by writing.
+ * Style is not editing: it sets the draft beside the style it looks at.
  */
-export type Mode = "write" | "review";
+export type Mode = "write" | "review" | "style";
 const MODE_KEY = "desk-mode";
 function loadMode(): Mode {
   try {
-    return localStorage.getItem(MODE_KEY) === "review" ? "review" : "write";
+    const m = localStorage.getItem(MODE_KEY);
+    return m === "review" || m === "style" ? m : "write";
   } catch {
     return "write";
   }
@@ -52,7 +54,8 @@ interface UiState {
   handwriting: boolean;
   /** A synthesised typing sound at every key (editor/typingSounds.ts). */
   typingSounds: boolean;
-  /** Write: formatting bar, outline and page. Review: page and the editor's notes. */
+  /** Write: formatting bar, outline and page. Review: page and the editor's notes. Style: page and
+   * the style the draft looks at. */
   mode: Mode;
   /** The drafts list, open over the desk (⌘O). */
   draftsOpen: boolean;

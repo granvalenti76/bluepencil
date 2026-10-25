@@ -36,6 +36,7 @@ import { Languages, userLanguagesDir } from "./languages.ts";
 import { registerLanguageRoutes } from "./routes/languages.ts";
 import { registerSecurity } from "./security.ts";
 import { registerWelcomeRoutes } from "./routes/welcome.ts";
+import { registerStyleRoutes } from "./routes/styles.ts";
 
 export interface AppOptions {
   config: Config;
@@ -195,6 +196,7 @@ export async function buildApp(options: AppOptions) {
   registerRevealRoutes(app, { repo, opener: options.opener });
   registerAuthorshipRoutes(app, { repo, draftsDir: config.draftsDir });
   registerHabitRoutes(app, { repo, index, store: judgments, languages });
+  registerStyleRoutes(app, { repo, index, watcher, languages, model });
   registerSettingsRoutes(app, {
     config,
     configPath: options.configPath,

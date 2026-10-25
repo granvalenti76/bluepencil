@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { isStylePath } from "@desk/core";
+import { styles } from "./styles.ts";
+import { useUi } from "./store.ts";
 import { useDoc, useDrafts } from "./docStore.ts";
 import { api, type DraftRow, type SearchHit } from "./api.ts";
 import { Marked } from "./SourcePanels.tsx";
@@ -30,12 +33,22 @@ function DraftCard({
     <button className="draft-card" data-path={d.path} aria-current={selected} onClick={onPick}>
       <span className="draft-title">{d.title}</span>
       <span className="draft-meta">
-        <span>{archetypeShortName(d.archetype)}</span>
-        <span className="draft-stage" data-stage={d.stage}>
-          {STAGE_LABEL[d.stage] ?? d.stage}
-        </span>
+        {isStylePath(d.path) ? (
+          <span className="draft-stage" data-stage="style">
+            Style
+          </span>
+        ) : (
+          <>
+            <span>{archetypeShortName(d.archetype)}</span>
+            <span className="draft-stage" data-stage={d.stage}>
+              {STAGE_LABEL[d.stage] ?? d.stage}
+            </span>
+          </>
+        )}
         <span className="grow" />
-        <span>{d.target > 0 ? `${words}/${d.target}` : "new"}</span>
+        <span>
+          {isStylePath(d.path) ? `${words} words` : d.target > 0 ? `${words}/${d.target}` : "new"}
+        </span>
       </span>
       <span className="bar bar-thin">
         <span className="bar-fill" data-over={over} style={{ width: `${pct}%` }} />
@@ -115,7 +128,10 @@ export function Sidebar({ onSelect }: { onSelect: (path: string) => void }) {
   const [query, setQuery] = useState("");
   const hits = useSearch(query);
 
-  const shown = filter === "all" ? drafts : drafts.filter((d) => d.stage === filter);
+  // Styles are not drafts at a stage: they live in their library.
+  const shown = drafts.filter(
+    (d) => !isStylePath(d.path) && (filter === "all" || d.stage === filter),
+  );
 
   return (
     <aside className="sidebar" aria-label="Drafts">
@@ -159,6 +175,16 @@ export function Sidebar({ onSelect }: { onSelect: (path: string) => void }) {
             {label}
           </button>
         ))}
+        <button
+          className="seg seg-styles"
+          data-tip="The styles you look at while writing"
+          onClick={() => {
+            useUi.getState().setDrafts(false);
+            styles.openLibrary();
+          }}
+        >
+          Styles
+        </button>
       </div>
       <div className="draft-list" aria-label={hits ? "Search results" : undefined}>
         {hits && <SearchResults hits={hits} current={path} onPick={onSelect} />}

@@ -40,6 +40,7 @@ function applyDetail(detail: DraftDetail, selection: number | null, judgments: J
     outline: fm.outline ?? [],
     brief: typeof fm.brief === "string" ? fm.brief.trim() : "",
     signoff: fm.signoff ?? null,
+    reference: typeof fm.reference === "string" ? fm.reference : null,
     lang: draftLanguage(
       fm.lang,
       useLanguages.getState().packs.map((p) => p.code),
@@ -186,6 +187,7 @@ export const session = {
         stage: fm.stage ?? doc().stage,
         target: fm.target ?? doc().target,
         signoff: fm.signoff ?? null,
+        reference: typeof fm.reference === "string" ? fm.reference : null,
         status: view.state.doc.toString() === text ? "saved" : "dirty",
       });
       void session.refreshList();

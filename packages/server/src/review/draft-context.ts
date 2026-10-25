@@ -1,6 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { archetypeIn, MAX_IGNORED, parseDraft, type DraftContext } from "@desk/core";
+import {
+  activeTraits,
+  archetypeIn,
+  isStylePath,
+  MAX_IGNORED,
+  parseDraft,
+  readStyle,
+  type DraftContext,
+} from "@desk/core";
 import { INDEX_DIR, type DraftsRepo } from "../drafts/repo.ts";
 import type { JudgmentsStore } from "../index-db/judgments.ts";
 import type { Languages } from "../languages.ts";
@@ -17,6 +25,16 @@ export async function readCommonStyle(draftsDir: string): Promise<string[]> {
     .split("\n")
     .map((l) => l.replace(/^\s*[-*]\s+/, "").trim())
     .filter((l) => l !== "" && !l.startsWith("#") && !l.startsWith("<!--"));
+}
+
+/** The traits of the style the draft looks at: style notes the review does not go against. */
+async function referenceTraits(repo: DraftsRepo, reference: string | undefined): Promise<string[]> {
+  if (!reference || !isStylePath(reference)) return [];
+  try {
+    return activeTraits(readStyle((await repo.read(reference)).text)).map((t) => t.text);
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -40,7 +58,11 @@ export async function loadDraftContext(
     outline: data.outline ?? [],
     brief: data.brief,
     glossary: data.glossary ?? [],
-    style: [...(await readCommonStyle(draftsDir)), ...(data.style ?? [])],
+    style: [
+      ...(await readCommonStyle(draftsDir)),
+      ...(await referenceTraits(repo, data.reference)),
+      ...(data.style ?? []),
+    ],
     ignored: store
       .listIgnored(path, MAX_IGNORED)
       .filter((j) => j.quote.trim() !== "")

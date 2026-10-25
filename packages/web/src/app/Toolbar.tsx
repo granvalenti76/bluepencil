@@ -1,5 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import { currentPass, REVIEW_ORDER } from "@desk/core";
+import { currentPass, isStylePath, REVIEW_ORDER } from "@desk/core";
 import { api } from "./api.ts";
 import { authorship, useAuthorship, writtenByYou } from "./authorship.ts";
 import { useDoc, type SaveStatus } from "./docStore.ts";
@@ -13,6 +13,8 @@ import { passes, usePasses } from "./passes.ts";
 import { fraction, progressText, review, STEP_LABEL, useReview } from "./review.ts";
 import { useJudgments, useUi } from "./store.ts";
 import { isMac, shortcut } from "./keys.ts";
+import { LookAtMenu } from "./StylePanel.tsx";
+import { useMode } from "./mode.ts";
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
   saved: "Saved",
@@ -45,12 +47,14 @@ export function Toolbar({ view }: { view: EditorView | null }) {
 }
 
 /**
- * Write or Review. Review says how many notes are waiting (⌃⌘N switches between them).
+ * Write, Review or Style. Review says how many notes are waiting (⌃⌘N switches Write and Review).
  */
 function ModeSwitch() {
-  const mode = useUi((s) => s.mode);
+  const mode = useMode();
   const setMode = useUi((s) => s.setMode);
   const path = useDoc((s) => s.path);
+  // A style file stays in Write: it is not reviewed and looks at no style.
+  const isStyle = path ? isStylePath(path) : false;
   const open = useJudgments((s) => s.notes.filter((n) => n.status === "open" && hasCard(n)).length);
   return (
     <div className="mode-switch" role="group" aria-label="Mode">
@@ -67,12 +71,27 @@ function ModeSwitch() {
         className="mode-btn"
         aria-pressed={mode === "review"}
         aria-label={`Review (${open} open)`}
-        data-tip="Review: the sheet and the editor's notes · ⌃⌘N"
-        disabled={!path}
+        data-tip={
+          isStyle ? "A style is not reviewed" : "Review: the sheet and the editor's notes · ⌃⌘N"
+        }
+        disabled={!path || isStyle}
         onClick={() => setMode("review")}
       >
         Review
         {open > 0 && <span className="badge">{open}</span>}
+      </button>
+      <button
+        className="mode-btn"
+        aria-pressed={mode === "style"}
+        data-tip={
+          isStyle
+            ? "This is a style: drafts look at it"
+            : "Style: the draft beside the style it looks at"
+        }
+        disabled={!path || isStyle}
+        onClick={() => setMode("style")}
+      >
+        Style
       </button>
     </div>
   );
@@ -104,10 +123,18 @@ function DocTitle() {
     <div className="doctitle">
       {drafts}
       <span className="doctitle-meta">
-        <span className="doctitle-type">{archetypeName(archetype)}</span>
-        <span className="stage-current" data-stage={stage}>
-          {STAGE_LABEL[stage] ?? stage}
-        </span>
+        {isStylePath(path) ? (
+          <span className="stage-current" data-stage="style">
+            Style
+          </span>
+        ) : (
+          <>
+            <span className="doctitle-type">{archetypeName(archetype)}</span>
+            <span className="stage-current" data-stage={stage}>
+              {STAGE_LABEL[stage] ?? stage}
+            </span>
+          </>
+        )}
         <span
           className="save-dot"
           data-status={status}
@@ -115,6 +142,7 @@ function DocTitle() {
           aria-label={SAVE_LABEL[status]}
           data-tip={SAVE_LABEL[status]}
         />
+        <LookAtMenu />
       </span>
     </div>
   );

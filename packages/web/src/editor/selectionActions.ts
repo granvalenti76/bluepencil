@@ -11,9 +11,16 @@ export interface SelectedText {
 
 /**
  * Next to the selection, a small "Ask": opens the editor's box below the paragraph (askBox.ts),
- * where you ask to rephrase or to check.
+ * where you ask to rephrase or to check. With `onStyle`, also "To a style": the passage becomes a
+ * piece of a style.
  */
-export function selectionActions({ bodyOffset }: { bodyOffset: number }): Extension {
+export function selectionActions({
+  bodyOffset,
+  onStyle,
+}: {
+  bodyOffset: number;
+  onStyle?: (text: string) => void;
+}): Extension {
   const tooltipOf = (state: EditorState): Tooltip | null => {
     const sel = selectedText(state, bodyOffset);
     if (!sel || askOf(state)) return null;
@@ -33,6 +40,19 @@ export function selectionActions({ bodyOffset }: { bodyOffset: number }): Extens
         ask.dataset.tip = "Ask the editor: rephrase or check the selected passage";
         ask.addEventListener("click", () => openAskBox(view, bodyOffset));
         dom.append(ask);
+        if (onStyle) {
+          const style = document.createElement("button");
+          style.type = "button";
+          style.className = "cm-sel-ask cm-sel-style";
+          style.textContent = "To a style";
+          style.setAttribute("aria-label", "Add the selection to a style");
+          style.dataset.tip = "Keep this passage as a piece of a style";
+          style.addEventListener("click", () => {
+            const now = selectedText(view.state, bodyOffset);
+            if (now) onStyle(now.text);
+          });
+          dom.append(style);
+        }
         return { dom };
       },
     };

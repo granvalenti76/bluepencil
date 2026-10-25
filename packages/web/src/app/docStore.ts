@@ -35,6 +35,8 @@ interface DocState {
   brief: string;
   /** The review's sign-off (`signoff` in the front matter). */
   signoff: { at: string; body: string } | null;
+  /** The style the draft looks at (`reference:`, a path in `Styles/`). */
+  reference: string | null;
   /** The draft's language (`lang` in the front matter; Italian if missing). */
   lang: DraftLanguage;
   /** The language the text seems to be written in, if clear (to propose changing `lang`). */
@@ -66,6 +68,7 @@ export const useDoc = create<DocState>()((set) => ({
   target: 0,
   outline: [],
   signoff: null,
+  reference: null,
   brief: "",
   lang: draftLanguage(undefined),
   detectedLang: null,

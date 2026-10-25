@@ -121,8 +121,13 @@ export function registerDraftRoutes(
     const current = await repo.read(path);
     let next = current.text;
     if (typeof body === "string") next = replaceBody(next, body);
-    if (frontmatterPatch)
-      next = patchFrontMatter(next, frontmatterPatch as Record<string, unknown>);
+    if (frontmatterPatch) {
+      // JSON has no `undefined`: `null` removes the field.
+      const patch = Object.fromEntries(
+        Object.entries(frontmatterPatch).map(([k, v]) => [k, v === null ? undefined : v]),
+      );
+      next = patchFrontMatter(next, patch);
+    }
 
     const file = await repo.write(path, next, baseHash);
     watcher.noteSelfWrite(path, file.hash);

@@ -25,6 +25,7 @@ words ignored when searching sources, the few words Bluepencil writes into a dra
     system.md  structure.md  structure-score.md  facts.md  grammar.md  prose.md
     prose-score.md  focus.md  outline.md  section.md  rewrite.md  repair.md
     letter.md      (optional: the editor's letter)
+    style-traits.md  style-tips.md   (optional: styles)
     labels.json  tools.json
   archetypes/
     article.json  blog.json  report.json  docs.json
@@ -95,6 +96,12 @@ most for quality.
 whole text (what works, the main problem, what is left), shown at the top of the margin. It goes
 together with `letter` and `letterText` in `tools.json`: all three, or none. Without them the
 checks work as before, without a letter.
+
+`style-traits.md` and `style-tips.md` are optional too. The first asks the model for the traits of
+a style (from its pieces), the second for the cues on a draft that looks at a style, and for each
+trait whether the draft follows it. The answers are JSON with fixed field names (`tratti`,
+`spunti`): copy the English files and translate the instructions, not the field names. Without
+them, styles still measure the draft, but the model reads no traits and finds no cues.
 
 ### prompts/labels.json and prompts/tools.json
 
