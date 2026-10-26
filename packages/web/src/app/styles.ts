@@ -51,6 +51,11 @@ interface StylesState {
   schemaOpen: boolean;
   /** A cue's number clicked on the page: its card is shown. */
   focusCue: number | null;
+  /**
+   * The cue whose passage of the style is open, by id; its paragraph is tinted on the page.
+   * `null`: the first cue; `""`: none.
+   */
+  openCue: string | null;
   /** The editor's last reading per draft, with the style and the text it was written on. */
   readings: Record<string, StyleReading & { style: string; bodyHash: string }>;
   /** The editor is reading the open draft beside the style. */
@@ -68,6 +73,7 @@ export const useStyles = create<StylesState>()(() => ({
   looking: null,
   missing: null,
   focusCue: null,
+  openCue: null,
   schemaOpen: false,
   readings: {},
   noting: false,
@@ -210,6 +216,7 @@ export const styles = {
       const reading = await api.styleReading(style, body, mine.signal);
       useStyles.setState((s) => ({
         readings: { ...s.readings, [draft]: { ...reading, style, bodyHash } },
+        openCue: null,
       }));
     } catch (e) {
       if (!mine.signal.aborted) {

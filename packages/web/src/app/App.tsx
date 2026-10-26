@@ -56,6 +56,7 @@ import { StyleOverlays } from "./StyleLibrary.tsx";
 import { styles, useStyles } from "./styles.ts";
 import { useMode } from "./mode.ts";
 import { cueMarks } from "../editor/cueMarks.ts";
+import { styleMargin } from "../editor/styleMargin.ts";
 
 /** The open dialog, from the bar, the app menu or a shortcut (one at a time). */
 function Dialogs({ onCreated }: { onCreated: (path: string) => void }) {
@@ -235,8 +236,10 @@ export function App() {
         onStyle:
           doc.path && !isStylePath(doc.path) ? (text) => styles.addSelection(text) : undefined,
       }),
-      // A cue's number on the page, in Write too: Style mode, with its card.
-      cueMarks((n) => {
+      // The reading beside a style on the page; a cue's number, in Write too: Style mode, with
+      // its card open.
+      cueMarks(),
+      styleMargin((n) => {
         useUi.getState().setMode("style");
         useStyles.setState({ focusCue: n });
       }),
@@ -280,6 +283,10 @@ export function App() {
   const styleCues = useUi((s) => s.styleCues);
   // A style file: what it does on the page, in place of the pieces.
   const schemaShown = useStyles((s) => s.schemaOpen) && isStyle && !preview;
+  // A draft beside a style: the reading in the margins, in Style mode and in Write if asked; the
+  // left margin widens for its column.
+  const styleMarginShown =
+    !isStyle && !!doc.reference && !preview && (inStyle || (inWrite && styleCues));
 
   if (!token) {
     return (
@@ -300,6 +307,7 @@ export function App() {
       data-focus={focus}
       data-hand={hand}
       data-style-cues={styleCues && inWrite}
+      data-style-margin={styleMarginShown}
     >
       <TooltipLayer />
       <Toolbar view={view} />

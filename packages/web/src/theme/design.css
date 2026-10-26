@@ -2745,67 +2745,117 @@ details.outline[open] > summary::before {
   background: var(--sienna);
 }
 
-/* The cues on the page: in Style mode (and in Write if asked), in sienna, numbered like the cards. */
-.cm-cue-n {
+/* The reading beside a style on the page: in Style mode, and in Write with View → Style cues. The
+   left margin widens for the paragraphs' column, beyond the line numbers (styleMargin.ts). */
+.shell[data-style-margin="true"] {
+  --numbers: 174px;
+  --cue-numbers: 40px;
+}
+/* The sheet's right padding goes inside the editor, where the cue numbers are drawn. */
+.shell[data-style-margin="true"] .sheet {
+  padding-right: 0;
+}
+.cm-sm-over,
+.cm-sm-under {
   display: none;
 }
-.shell[data-mode="style"] .cm-cue,
-.shell[data-style-cues="true"] .cm-cue {
+.shell[data-style-margin="true"] .cm-sm-over,
+.shell[data-style-margin="true"] .cm-sm-under {
+  display: block;
+}
+.shell[data-style-margin="true"] .cm-cue {
   border-bottom: 1.5px dotted var(--sienna);
 }
 /* Where the draft already does what the style does: the pencil, not the sienna. */
-.shell[data-mode="style"] .cm-cue[data-tone="like"],
-.shell[data-style-cues="true"] .cm-cue[data-tone="like"] {
+.shell[data-style-margin="true"] .cm-cue[data-tone="like"] {
   border-bottom: 1.5px solid var(--pencil);
 }
-.shell[data-mode="style"] .cm-cue-n,
-.shell[data-style-cues="true"] .cm-cue-n {
+.cm-sm-tint {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sienna-bg) 65%, transparent);
+}
+.cm-sm-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 92px;
+  font-family: var(--font-ui);
+}
+.cm-sm-fn {
+  font-size: 10.5px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--sienna-strong);
+}
+.cm-sm-para {
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--line-number);
+}
+.cm-sm-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 40px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--card-rule);
+}
+.cm-sm-bar {
+  width: 5px;
+  background: var(--card-rule);
+}
+.cm-sm-bar[data-short="true"] {
+  background: var(--sienna);
+}
+.cm-sm-nums {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cm-sm-n {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  margin-right: 3px;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
   border: 1.5px solid var(--sienna);
   border-radius: 50%;
-  box-sizing: border-box;
-  vertical-align: 2px;
+  background: var(--paper);
   font-family: var(--font-text);
-  font-size: 11px;
-  font-style: italic;
+  font-size: 16px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
   color: var(--sienna);
   cursor: pointer;
+  pointer-events: auto;
 }
-.shell[data-mode="style"] .cm-cue-n[data-tone="like"],
-.shell[data-style-cues="true"] .cm-cue-n[data-tone="like"] {
+.cm-sm-n[data-tone="like"] {
   border-color: var(--pencil);
   color: var(--pencil);
 }
-.shell[data-mode="style"] .cm-cue-n[data-tone="missing"],
-.shell[data-style-cues="true"] .cm-cue-n[data-tone="missing"] {
+.cm-sm-n[data-tone="missing"] {
   border-style: dashed;
   border-color: var(--text-faint);
   color: var(--text-muted);
 }
-.shell[data-style-cues="true"] .cm-cue-n:hover {
-  background: var(--sienna-bg);
+.cm-sm-n[data-open="true"] {
+  background: var(--sienna);
+  color: var(--paper);
 }
-/* What a paragraph does, before its first word: in Style mode only. */
-.cm-cue-fn {
-  display: none;
+.cm-sm-n[data-open="true"][data-tone="like"] {
+  background: var(--pencil);
 }
-.shell[data-mode="style"] .cm-cue-fn {
-  display: inline-block;
-  margin-right: 6px;
-  vertical-align: 3px;
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-style: normal;
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.09em;
-  line-height: 1;
-  text-transform: uppercase;
-  color: var(--sienna-strong);
+.cm-sm-n[data-open="true"][data-tone="missing"] {
+  border-style: solid;
+  background: var(--text-muted);
+}
+.cm-sm-n:hover {
+  box-shadow: 0 0 0 3px var(--sienna-bg);
 }
 .cm-sel-style {
   margin-left: 4px;

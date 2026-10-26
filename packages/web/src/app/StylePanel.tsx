@@ -31,6 +31,7 @@ import {
   type StyleTrait,
 } from "@desk/core";
 import { setCueMarks, type CueMark } from "../editor/cueMarks.ts";
+import { setStyleMargin, type MarginParagraph } from "../editor/styleMargin.ts";
 import { api } from "./api.ts";
 import { useDoc } from "./docStore.ts";
 import { languageName, useLanguages, usePack } from "./languages.ts";
@@ -115,28 +116,51 @@ function findWords(body: string, words: string, para?: MeasuredParagraph) {
   return at < 0 ? null : { from: at, to: at + needle.length };
 }
 
-/** The reading on the page: what each paragraph does, the cues' numbers, the words they name. */
-function readingMarks(reading: StyleReading, m: MeasuredText, body: string): CueMark[] {
-  const marks: CueMark[] = [];
-  reading.functions.forEach((f, i) => {
-    const p = m.paragraphs[i];
-    if (f && p) marks.push({ from: p.from, to: p.from, label: f });
-  });
-  reading.cues.forEach((c, i) => {
+/** The words the reading's cues name, underlined on the page. */
+function underlines(reading: StyleReading, m: MeasuredText, body: string): CueMark[] {
+  return reading.cues.flatMap((c) => {
     const p = c.paragraph ? m.paragraphs[c.paragraph - 1] : undefined;
-    if (p) marks.push({ from: p.from, to: p.from, n: i + 1, tone: c.outcome });
-    for (const w of c.words) {
+    return c.words.flatMap((w) => {
       const at = findWords(body, w, p);
-      if (at) marks.push({ ...at, tone: c.outcome });
-    }
+      return at ? [{ ...at, tone: c.outcome }] : [];
+    });
   });
-  return marks;
+}
+
+/** The cue whose passage is open: the one chosen, or the first. */
+const openOf = (reading: StyleReading | undefined, chosen: string | null) =>
+  chosen ?? reading?.cues[0]?.id ?? "";
+
+/**
+ * The margins of the page: every paragraph with its number and its sentences, what it does and
+ * its cues when the editor has read the draft, the open cue's paragraph tinted.
+ */
+function marginOf(
+  m: MeasuredText,
+  reading: StyleReading | undefined,
+  open: string,
+): MarginParagraph[] {
+  return m.paragraphs.map((p, i) => {
+    const cues = (reading?.cues ?? []).flatMap((c, k) =>
+      c.paragraph === i + 1 ? [{ n: k + 1, tone: c.outcome, id: c.id }] : [],
+    );
+    const opened = cues.find((c) => c.id === open);
+    return {
+      from: p.from,
+      to: p.to,
+      n: i + 1,
+      ...(reading?.functions[i] ? { label: reading.functions[i] } : {}),
+      bars: m.sentences.slice(p.first, p.first + p.sentences).map((s) => s.words),
+      cues: cues.map(({ n, tone }) => ({ n, tone })),
+      ...(opened ? { open: opened.n } : {}),
+    };
+  });
 }
 
 /**
  * The draft beside the style it looks at, always (not only in Style mode): the style is read and
- * measured once, the draft again as it changes; the editor's reading goes on the page in Style
- * mode, and its numbers in Write if the author asks (View → Style cues).
+ * measured once, the draft again as it changes; the editor's reading goes in the page's margins
+ * in Style mode, and in Write if the author asks (View → Style cues).
  */
 export function StyleCues({ view }: { view: EditorView | null }) {
   const path = useDoc((s) => s.path) ?? "";
@@ -194,20 +218,29 @@ export function StyleCues({ view }: { view: EditorView | null }) {
   }, [path, current, schema, comparison]);
 
   const reading = useReading();
+  const chosen = useStyles((s) => s.openCue);
   const visible = mode === "style" || (mode === "write" && inWrite);
   useEffect(() => {
     if (!view) return;
-    const marks =
-      visible && reading && comparison
-        ? readingMarks(reading, comparison.measured, body).map((x) => ({
-            ...x,
-            from: offset + x.from,
-            to: offset + x.to,
-          }))
-        : [];
-    view.dispatch({ effects: setCueMarks.of(marks) });
-  }, [view, offset, reading, comparison, body, visible]);
-  useEffect(() => () => view?.dispatch({ effects: setCueMarks.of([]) }), [view]);
+    const m = comparison?.measured;
+    const at = <T extends { from: number; to: number }>(x: T): T => ({
+      ...x,
+      from: offset + x.from,
+      to: offset + x.to,
+    });
+    view.dispatch({
+      effects: [
+        setCueMarks.of(visible && reading && m ? underlines(reading, m, body).map(at) : []),
+        setStyleMargin.of(
+          visible && m ? marginOf(m, reading, openOf(reading, chosen)).map(at) : [],
+        ),
+      ],
+    });
+  }, [view, offset, reading, comparison, body, visible, chosen]);
+  useEffect(
+    () => () => view?.dispatch({ effects: [setCueMarks.of([]), setStyleMargin.of([])] }),
+    [view],
+  );
   return null;
 }
 
@@ -419,7 +452,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
   const reading = useReading();
   const pack = usePack(looking?.style.lang ?? draftLang);
   const sentences = useSentences(looking?.style ?? NO_STYLE, pack);
-  const [open, setOpen] = useState<string | null>(null);
+  const chosen = useStyles((s) => s.openCue);
 
   useEffect(() => {
     if (focusCue === null) return;
@@ -427,7 +460,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
       .querySelector(`.style-cue[data-n="${focusCue}"]`)
       ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     const cue = reading?.cues[focusCue - 1];
-    if (cue) setOpen(cue.id);
+    if (cue) useStyles.setState({ openCue: cue.id });
     const t = setTimeout(() => useStyles.setState({ focusCue: null }), 1600);
     return () => clearTimeout(t);
   }, [focusCue, reading]);
@@ -469,7 +502,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
   };
   const stale = reading !== undefined && reading.bodyHash !== bodyHash;
   const ask = () => void styles.readDraft(looking.draft, reference, body, bodyHash);
-  const shownOpen = open ?? reading?.cues[0]?.id ?? null;
+  const shownOpen = openOf(reading, chosen);
   const marked = new Set(
     (reading?.cues ?? []).flatMap((c) => (c.paragraph ? [c.paragraph - 1] : [])),
   );
@@ -572,7 +605,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
                   functions={reading.functions}
                   focus={focusCue === i + 1}
                   open={shownOpen === c.id}
-                  onToggle={() => setOpen(shownOpen === c.id ? "" : c.id)}
+                  onToggle={() => useStyles.setState({ openCue: shownOpen === c.id ? "" : c.id })}
                   goTo={goTo}
                 />
               ))}

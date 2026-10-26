@@ -17,6 +17,8 @@ export const editorTheme = EditorView.theme({
     width: "var(--measure)",
     minWidth: "0",
     marginLeft: "var(--numbers)",
+    // Room for the cue numbers on the right, inside the scroller (styleMargin.ts).
+    marginRight: "var(--cue-numbers, 0px)",
     padding: "8px 0",
     caretColor: "var(--text)",
   },
