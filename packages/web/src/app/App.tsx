@@ -51,6 +51,7 @@ import { NewDraftDialog } from "./NewDraftDialog.tsx";
 import { PublishDialog } from "./PublishDialog.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
 import { StyleCues, StylePanel } from "./StylePanel.tsx";
+import { StyleSheet } from "./StyleSheet.tsx";
 import { StyleOverlays } from "./StyleLibrary.tsx";
 import { styles, useStyles } from "./styles.ts";
 import { useMode } from "./mode.ts";
@@ -277,6 +278,8 @@ export function App() {
   const inStyle = mode === "style";
   const inWrite = mode === "write";
   const styleCues = useUi((s) => s.styleCues);
+  // A style file: its schema on the page, in place of the pieces.
+  const schemaShown = useStyles((s) => s.schemaOpen) && isStyle && !preview;
 
   if (!token) {
     return (
@@ -336,8 +339,9 @@ export function App() {
                       notes={inReview ? previewNotes(view) : []}
                     />
                   )}
+                  {schemaShown && <StyleSheet view={view} />}
                   <AskBox view={view} />
-                  <div className="editor-col sheet" hidden={preview}>
+                  <div className="editor-col sheet" hidden={preview || schemaShown}>
                     <DryStamp />
                     <Editor
                       key={doc.loadId}

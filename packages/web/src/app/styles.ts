@@ -45,6 +45,8 @@ interface StylesState {
   looking: Looking | null;
   /** The style the open draft looks at is gone. */
   missing: string | null;
+  /** On a style file: its schema on the page, in place of the pieces. */
+  schemaOpen: boolean;
   /** A cue's number clicked on the page: its card is shown. */
   focusCue: number | null;
   /** The editor's last note per draft, with the style and the text it was written on. */
@@ -66,6 +68,7 @@ export const useStyles = create<StylesState>()(() => ({
   looking: null,
   missing: null,
   focusCue: null,
+  schemaOpen: false,
   notes: {},
   noting: false,
   noteError: null,
@@ -96,9 +99,13 @@ export const styles = {
       fail(e, "Couldn’t read the styles");
     }
   },
-  open(path: string) {
-    useStyles.setState({ libraryOpen: false });
+  /** Opens a style; `schema`: on its schema rather than on its pieces. */
+  open(path: string, schema = false) {
+    useStyles.setState({ libraryOpen: false, schemaOpen: schema });
     openPath(path);
+  },
+  toggleSchema() {
+    useStyles.setState((s) => ({ schemaOpen: !s.schemaOpen }));
   },
   openLibrary() {
     useStyles.setState({ libraryOpen: true, error: null });

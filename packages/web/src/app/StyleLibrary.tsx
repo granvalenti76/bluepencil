@@ -71,7 +71,7 @@ function StyleLibrary() {
               key={s.path}
               className="library-card"
               aria-current={s.path === current}
-              onClick={() => styles.open(s.path)}
+              onClick={() => styles.open(s.path, s.pieces > 0)}
             >
               <span className="library-card-name">{s.name}</span>
               <span className="style-small">

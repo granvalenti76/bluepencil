@@ -346,26 +346,29 @@ function MeasureRow({
  * The rhythm: a bar per sentence, as long as the sentence, short ones in sienna; with paragraphs,
  * a gap between them, and a click on a paragraph goes there. The band is the style's usual length.
  */
-function RhythmBars({
+export function RhythmBars({
   lengths,
   band,
   paragraphs,
   marked,
   onParagraph,
+  height = 58,
 }: {
   lengths: number[];
   band?: { lo: number; hi: number };
   paragraphs?: { first: number; sentences: number }[];
   marked?: Set<number>;
   onParagraph?: (p: number) => void;
+  /** The height of the strip: a sentence of 35 words or more fills it. */
+  height?: number;
 }) {
-  const h = (n: number) => Math.max(5, Math.min(56, Math.round(n * 1.6)));
+  const h = (n: number) => Math.max(5, Math.min(height - 2, Math.round((n * height) / 36)));
   const bar = (n: number, k: number) => (
     <span key={k} className="style-bar" data-short={n <= 8} style={{ height: h(n) }} />
   );
   const groups = paragraphs ?? [{ first: 0, sentences: lengths.length }];
   return (
-    <div className="style-bars" aria-hidden>
+    <div className="style-bars" style={{ height }} aria-hidden>
       {band && (
         <span
           className="style-bars-band"
@@ -398,7 +401,7 @@ function RhythmBars({
 const STATE_LABEL = { active: "Proposed", fixed: "Kept", off: "Set aside" } as const;
 
 /** A sentence of the model (or the author's), with its state and what can be done with it. */
-function TraitLine({
+export function TraitLine({
   trait,
   onState,
 }: {
@@ -442,7 +445,7 @@ function TraitLine({
 }
 
 /** The model's sentence on a dimension, if there is one and it is not set aside. */
-const saidOn = (style: Pick<Style, "traits">, dim: TraitDim) =>
+export const saidOn = (style: Pick<Style, "traits">, dim: TraitDim) =>
   style.traits.find((t) => t.dim === dim && t.state !== "off")?.text;
 
 const where = (c: StyleCue) =>
@@ -535,6 +538,9 @@ function LookingAt({ view }: { view: EditorView | null }) {
           {style.pieces.length} {style.pieces.length === 1 ? "piece" : "pieces"}
         </span>
         <span className="style-head-actions">
+          <button className="link-btn" onClick={() => styles.open(reference, true)}>
+            See its schema
+          </button>
           <button className="link-btn" onClick={() => styles.open(reference)}>
             Open the style
           </button>
@@ -725,7 +731,7 @@ async function saveTraits(path: string, traits: StyleTrait[]) {
 }
 
 /** Chips of words with how often they come; the ones never used struck through. */
-function Words({ used, never }: { used: { word: string; n: number }[]; never?: string[] }) {
+export function Words({ used, never }: { used: { word: string; n: number }[]; never?: string[] }) {
   return (
     <span className="style-chips">
       {used.map((w) => (
@@ -742,7 +748,7 @@ function Words({ used, never }: { used: { word: string; n: number }[]; never?: s
   );
 }
 
-const OPENER_LABEL = {
+export const OPENER_LABEL = {
   subject: "subject",
   setting: "time or place",
   conjunction: "conjunction",
@@ -750,11 +756,23 @@ const OPENER_LABEL = {
 } as const;
 
 /** What the dimension shows beyond its measures: rhythm bars, words, how sentences open. */
-function DimensionExtra({ dim, schema }: { dim: StyleDimension; schema: StyleSchema }) {
+export function DimensionExtra({
+  dim,
+  schema,
+  barsHeight,
+}: {
+  dim: StyleDimension;
+  schema: StyleSchema;
+  barsHeight?: number;
+}) {
   if (dim === "rhythm" && schema.rhythm.length) {
     return (
       <>
-        <RhythmBars lengths={schema.rhythm} band={schema.ranges.sentenceLength} />
+        <RhythmBars
+          lengths={schema.rhythm}
+          band={schema.ranges.sentenceLength}
+          height={barsHeight}
+        />
         <p className="style-small">
           The first {schema.rhythm.length} sentences of the pieces, in order; short ones in sienna.
         </p>
@@ -810,13 +828,15 @@ function DimensionExtra({ dim, schema }: { dim: StyleDimension; schema: StyleSch
 }
 
 /** A style file, open in the editor: its schema, and the sentences that put it into words. */
-function ThisStyle({ view }: { view: EditorView | null }) {
+/**
+ * The open style file: its sentences from the file as loaded, its pieces from the page as it is
+ * now, its schema; and what can be done with its sentences.
+ */
+export function useThisStyle(view: EditorView | null) {
   const path = useDoc((s) => s.path) ?? "";
   const reading = useStyles((s) => s.reading.includes(path));
   const text = useDoc((s) => s.text);
   const body = useBody(view);
-  const [added, setAdded] = useState("");
-  // The sentences come from the file as loaded; the pieces from the page as it is now.
   const style = useMemo(() => {
     const live = readStyle(`---\n---\n${body}`);
     return { ...readStyle(text), pieces: live.pieces, words: live.words };
@@ -832,6 +852,13 @@ function ThisStyle({ view }: { view: EditorView | null }) {
       path,
       style.traits.map((x) => (x === t ? { ...x, state } : x)),
     );
+  return { path, reading, style, schema, describe, setState };
+}
+
+function ThisStyle({ view }: { view: EditorView | null }) {
+  const { path, reading, style, schema, describe, setState } = useThisStyle(view);
+  const [added, setAdded] = useState("");
+  const schemaOpen = useStyles((s) => s.schemaOpen);
   const sentence = (dim: TraitDim) =>
     style.traits
       .filter((t) => t.dim === dim)
@@ -849,6 +876,15 @@ function ThisStyle({ view }: { view: EditorView | null }) {
           {style.words.toLocaleString()} words · {schema.sentences} sentences. Each “##” heading on
           the page starts a piece.
         </span>
+        {style.pieces.length > 0 && (
+          <button
+            className="btn-primary btn-small style-primary style-schema-btn"
+            aria-pressed={schemaOpen}
+            onClick={() => styles.toggleSchema()}
+          >
+            {schemaOpen ? "Back to the pieces" : "See the schema"}
+          </button>
+        )}
       </header>
       {style.pieces.length === 0 ? (
         <p className="style-lead">
