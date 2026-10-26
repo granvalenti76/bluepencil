@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { EditorSelection } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
+  activeProcedures,
   compareWithStyle,
+  countWords,
   DIMENSION_LABEL,
   DRAFT_MIN_WORDS,
   formatMeasure,
   isStylePath,
+  PART_LABEL,
+  proceduresForFile,
   readStyle,
   STYLE_DIMENSIONS,
   STYLE_MAX_WORDS,
@@ -14,30 +18,44 @@ import {
   styleSchema,
   traitsForFile,
   type MeasureDef,
+  type MeasuredParagraph,
   type MeasuredText,
+  type PieceSentence,
+  type Procedure,
+  type ReadingCue,
+  type ReadingOutcome,
   type Style,
-  type StyleCue,
   type StyleDimension,
+  type StyleReading,
   type StyleSchema,
   type StyleTrait,
-  type TraitDim,
 } from "@desk/core";
-import { setCueMarks } from "../editor/cueMarks.ts";
+import { setCueMarks, type CueMark } from "../editor/cueMarks.ts";
 import { api } from "./api.ts";
 import { useDoc } from "./docStore.ts";
 import { languageName, useLanguages, usePack } from "./languages.ts";
 import { useMenu } from "./Menu.tsx";
 import { useMode } from "./mode.ts";
+import {
+  PassageSlip,
+  PieceDots,
+  RhythmBars,
+  StateRow,
+  TraitLine,
+  useLocated,
+  useSentences,
+  Words,
+} from "./Procedures.tsx";
 import { session } from "./session.ts";
 import { useUi } from "./store.ts";
 import { styles, useStyles } from "./styles.ts";
 
 /**
- * The card on the right. On a draft, in Style mode: what the style does, in the model's words;
- * the editor's note on the draft beside it (the cues the code finds by patterns, numbered on the
- * page too, each put into words by the model); the numbers, closed. On a style file: the model's
- * sentence on each dimension, to keep or set aside, with the code's numbers under it. Nothing
- * here rewrites the text, and nothing quotes the style's pieces.
+ * The card on the right. On a draft, in Style mode: the editor's reading of the draft beside the
+ * style, paragraph by paragraph (which procedure of the style is at stake, how the draft stands
+ * beside it, and the style's own passage on a click), numbered on the page too; the numbers,
+ * closed. On a style file: what the model read in it (its summary and procedures, to keep or set
+ * aside) and its measures. Nothing here rewrites the text.
  */
 export function StylePanel({ view }: { view: EditorView | null }) {
   const path = useDoc((s) => s.path) ?? "";
@@ -75,20 +93,50 @@ function useBody(view: EditorView | null) {
   return useMemo(() => view?.state.sliceDoc(offset) ?? "", [view, offset, bodyHash]);
 }
 
-/** The cues the author has not set aside, numbered as on the page. */
-function useShownCues(): StyleCue[] {
-  const looking = useStyles((s) => s.looking);
-  const hidden = useStyles((s) => (looking ? s.hidden[looking.draft] : undefined));
-  return useMemo(
-    () => (looking?.comparison.cues ?? []).filter((c) => !hidden?.includes(c.id)),
-    [looking, hidden],
-  );
+/** The editor's last reading of the open draft, if it was beside the style it looks at now. */
+function useReading() {
+  const path = useDoc((s) => s.path) ?? "";
+  const reference = useDoc((s) => s.reference);
+  return useStyles((s) => {
+    const r = s.readings[path];
+    return r && r.style === reference ? r : undefined;
+  });
+}
+
+/** Words of the draft a cue speaks of: in its paragraph first, then anywhere. */
+function findWords(body: string, words: string, para?: MeasuredParagraph) {
+  const norm = (t: string) => t.toLowerCase().replace(/’/g, "'");
+  const hay = norm(body);
+  const needle = norm(words.trim());
+  if (!needle) return null;
+  let at = para ? hay.indexOf(needle, para.from) : -1;
+  if (para && at > para.to) at = -1;
+  if (at < 0) at = hay.indexOf(needle);
+  return at < 0 ? null : { from: at, to: at + needle.length };
+}
+
+/** The reading on the page: what each paragraph does, the cues' numbers, the words they name. */
+function readingMarks(reading: StyleReading, m: MeasuredText, body: string): CueMark[] {
+  const marks: CueMark[] = [];
+  reading.functions.forEach((f, i) => {
+    const p = m.paragraphs[i];
+    if (f && p) marks.push({ from: p.from, to: p.from, label: f });
+  });
+  reading.cues.forEach((c, i) => {
+    const p = c.paragraph ? m.paragraphs[c.paragraph - 1] : undefined;
+    if (p) marks.push({ from: p.from, to: p.from, n: i + 1, tone: c.outcome });
+    for (const w of c.words) {
+      const at = findWords(body, w, p);
+      if (at) marks.push({ ...at, tone: c.outcome });
+    }
+  });
+  return marks;
 }
 
 /**
  * The draft beside the style it looks at, always (not only in Style mode): the style is read and
- * measured once, the draft again as it changes; the cues go on the page in Style mode, and in
- * Write if the author asks (View → Style cues).
+ * measured once, the draft again as it changes; the editor's reading goes on the page in Style
+ * mode, and its numbers in Write if the author asks (View → Style cues).
  */
 export function StyleCues({ view }: { view: EditorView | null }) {
   const path = useDoc((s) => s.path) ?? "";
@@ -98,7 +146,7 @@ export function StyleCues({ view }: { view: EditorView | null }) {
   const body = useBody(view);
   const mode = useMode();
   const inWrite = useUi((s) => s.styleCues);
-  // The style is read again when its sentences or pieces change (the model writes in the background).
+  // The style is read again when the model has read it (in the background) or its pieces change.
   const listed = useStyles((s) => s.list.find((x) => x.path === reference));
   const [style, setStyle] = useState<{ path: string; style: Style } | null>(null);
 
@@ -120,12 +168,12 @@ export function StyleCues({ view }: { view: EditorView | null }) {
     return () => {
       live = false;
     };
-  }, [path, reference, listed?.traits, listed?.pieces, listed?.words, listed?.summary]);
+  }, [path, reference, listed?.procedures, listed?.pieces, listed?.words, listed?.summary]);
 
   const current = style && style.path === reference ? style : null;
-  // A style never put into words: the model describes it, once, in the background.
+  // A style never read: the model reads it, once, in the background.
   useEffect(() => {
-    if (current) styles.describeIfNew(current.path, current.style);
+    if (current) styles.readIfNew(current.path, current.style);
   }, [current]);
   const pack = usePack(current?.style.lang ?? draftLang);
   const schema = useMemo(
@@ -145,21 +193,20 @@ export function StyleCues({ view }: { view: EditorView | null }) {
     });
   }, [path, current, schema, comparison]);
 
-  const shown = useShownCues();
+  const reading = useReading();
   const visible = mode === "style" || (mode === "write" && inWrite);
   useEffect(() => {
     if (!view) return;
-    view.dispatch({
-      effects: setCueMarks.of(
-        visible
-          ? shown.flatMap((c, i) => [
-              ...(c.at !== null ? [{ from: offset + c.at, to: offset + c.at, n: i + 1 }] : []),
-              ...c.words.map((w) => ({ from: offset + w.from, to: offset + w.to })),
-            ])
-          : [],
-      ),
-    });
-  }, [view, offset, shown, visible]);
+    const marks =
+      visible && reading && comparison
+        ? readingMarks(reading, comparison.measured, body).map((x) => ({
+            ...x,
+            from: offset + x.from,
+            to: offset + x.to,
+          }))
+        : [];
+    view.dispatch({ effects: setCueMarks.of(marks) });
+  }, [view, offset, reading, comparison, body, visible]);
   useEffect(() => () => view?.dispatch({ effects: setCueMarks.of([]) }), [view]);
   return null;
 }
@@ -173,8 +220,8 @@ function Choose() {
     <div className="style-choose">
       <p className="style-lead">
         Look at a style while you write: pieces of a book, articles, a text of yours that worked.
-        Bluepencil measures its rhythm, vocabulary, construction and voice, and shows where the
-        draft’s patterns move away from it.
+        The editor reads in them what the style does (how it opens, how it closes a paragraph, how
+        it shows people) and tells you, paragraph by paragraph, how your draft stands beside it.
       </p>
       {loaded && mine.length > 0 && (
         <ul className="style-list" aria-label="Styles">
@@ -342,129 +389,26 @@ function MeasureRow({
   );
 }
 
-/**
- * The rhythm: a bar per sentence, as long as the sentence, short ones in sienna; with paragraphs,
- * a gap between them, and a click on a paragraph goes there. The band is the style's usual length.
- */
-export function RhythmBars({
-  lengths,
-  band,
-  paragraphs,
-  marked,
-  onParagraph,
-  height = 58,
-}: {
-  lengths: number[];
-  band?: { lo: number; hi: number };
-  paragraphs?: { first: number; sentences: number }[];
-  marked?: Set<number>;
-  onParagraph?: (p: number) => void;
-  /** The height of the strip: a sentence of 35 words or more fills it. */
-  height?: number;
-}) {
-  const h = (n: number) => Math.max(5, Math.min(height - 2, Math.round((n * height) / 36)));
-  const bar = (n: number, k: number) => (
-    <span key={k} className="style-bar" data-short={n <= 8} style={{ height: h(n) }} />
-  );
-  const groups = paragraphs ?? [{ first: 0, sentences: lengths.length }];
-  return (
-    <div className="style-bars" style={{ height }} aria-hidden>
-      {band && (
-        <span
-          className="style-bars-band"
-          style={{ bottom: h(band.lo), height: Math.max(2, h(band.hi) - h(band.lo)) }}
-        />
-      )}
-      {groups.map((g, p) =>
-        onParagraph ? (
-          <button
-            key={p}
-            className="style-bars-para"
-            style={{ flexGrow: g.sentences }}
-            data-marked={marked?.has(p) ?? false}
-            tabIndex={-1}
-            data-tip={`Paragraph ${p + 1}`}
-            onClick={() => onParagraph(p)}
-          >
-            {lengths.slice(g.first, g.first + g.sentences).map(bar)}
-          </button>
-        ) : (
-          <span key={p} className="style-bars-para" style={{ flexGrow: g.sentences }}>
-            {lengths.slice(g.first, g.first + g.sentences).map(bar)}
-          </span>
-        ),
-      )}
-    </div>
-  );
-}
+const OUTCOME_LABEL: Record<ReadingOutcome, string> = {
+  differs: "Differs from the style",
+  like: "Like the style",
+  missing: "Not in the draft yet",
+};
 
-const STATE_LABEL = { active: "Proposed", fixed: "Kept", off: "Set aside" } as const;
-
-/** A sentence of the model (or the author's), with its state and what can be done with it. */
-export function TraitLine({
-  trait,
-  onState,
-}: {
-  trait: StyleTrait;
-  onState: (state: StyleTrait["state"]) => void;
-}) {
-  const state = trait.state ?? "active";
-  return (
-    <div className="style-said" data-state={state}>
-      <p>{trait.text}</p>
-      <div className="style-said-row">
-        <span className="style-state" data-state={state}>
-          {state === "fixed" ? "✓ " : ""}
-          {STATE_LABEL[state]}
-        </span>
-        {state === "active" && (
-          <button
-            className="btn-secondary btn-small"
-            data-tip="Kept when the model describes the style again"
-            onClick={() => onState("fixed")}
-          >
-            Keep
-          </button>
-        )}
-        {state !== "off" ? (
-          <button
-            className="btn-secondary btn-small"
-            data-tip="No longer part of the style, and not proposed again"
-            onClick={() => onState("off")}
-          >
-            Set aside
-          </button>
-        ) : (
-          <button className="btn-secondary btn-small" onClick={() => onState("fixed")}>
-            Take back
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** The model's sentence on a dimension, if there is one and it is not set aside. */
-export const saidOn = (style: Pick<Style, "traits">, dim: TraitDim) =>
-  style.traits.find((t) => t.dim === dim && t.state !== "off")?.text;
-
-const where = (c: StyleCue) =>
-  c.paragraphs.length === 0
-    ? "Whole draft"
-    : `¶${c.paragraphs.slice(0, 4).join(", ¶")}${c.paragraphs.length > 4 ? "…" : ""}`;
-
-/** Notes asked for once without a click, per draft and style: not again if it failed. */
-const noted = new Set<string>();
+/** Readings asked for once without a click, per draft and style: not again if it failed. */
+const asked = new Set<string>();
 
 /**
- * A draft looking at a style. At the top what the style does, in the model's words; then the
- * editor's note: the cues the code found, each in the model's words (the code's numbers below
- * it); the numbers themselves, closed, at the end.
+ * A draft looking at a style: the editor's reading, paragraph by paragraph. At the top how the
+ * draft stands beside the style; then each cue (the paragraph and what it does, the procedure of
+ * the style at stake, the note, and on a click the passage where the style does it); the numbers,
+ * closed, at the end.
  */
 function LookingAt({ view }: { view: EditorView | null }) {
   const reference = useDoc((s) => s.reference) ?? "";
   const offset = useDoc((s) => s.bodyOffset);
   const bodyHash = useDoc((s) => s.bodyHash);
+  const draftLang = useDoc((s) => s.lang.code);
   const body = useBody(view);
   const looking = useStyles((s) => (s.looking?.reference === reference ? s.looking : null));
   const missing = useStyles((s) => s.missing === reference);
@@ -472,29 +416,32 @@ function LookingAt({ view }: { view: EditorView | null }) {
   const describing = useStyles((s) => s.reading.includes(reference));
   const noting = useStyles((s) => s.noting);
   const noteError = useStyles((s) => s.noteError);
-  const saved = useStyles((s) => (looking ? s.notes[looking.draft] : undefined));
-  const note = saved?.style === reference ? saved : undefined;
-  const cues = useShownCues();
+  const reading = useReading();
+  const pack = usePack(looking?.style.lang ?? draftLang);
+  const sentences = useSentences(looking?.style ?? NO_STYLE, pack);
+  const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => {
     if (focusCue === null) return;
     document
       .querySelector(`.style-cue[data-n="${focusCue}"]`)
       ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const cue = reading?.cues[focusCue - 1];
+    if (cue) setOpen(cue.id);
     const t = setTimeout(() => useStyles.setState({ focusCue: null }), 1600);
     return () => clearTimeout(t);
-  }, [focusCue]);
+  }, [focusCue, reading]);
 
   // The editor reads the draft beside the style by itself the first time; afterwards on request.
   const draft = looking?.draft;
-  const ready = !!looking && looking.style.pieces.length > 0 && !describing;
+  const ready = !!looking && activeProcedures(looking.style).length > 0 && !describing;
   useEffect(() => {
-    if (!draft || !ready || note || noting) return;
+    if (!draft || !ready || reading || noting) return;
     const key = `${draft}\u0000${reference}`;
-    if (noted.has(key)) return;
-    noted.add(key);
-    void styles.readNote(draft, reference, body, bodyHash);
-  }, [draft, ready, note, noting, reference, body, bodyHash]);
+    if (asked.has(key)) return;
+    asked.add(key);
+    void styles.readDraft(draft, reference, body, bodyHash);
+  }, [draft, ready, reading, noting, reference, body, bodyHash]);
 
   if (missing) {
     return (
@@ -509,6 +456,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
   if (!looking) return <p className="notes-empty">Reading the style…</p>;
   const { style, schema, comparison } = looking;
   const m: MeasuredText = comparison.measured;
+  const procedures = activeProcedures(style);
 
   const goTo = (from: number, to = from) => {
     if (!view) return;
@@ -519,14 +467,12 @@ function LookingAt({ view }: { view: EditorView | null }) {
     });
     view.focus();
   };
-  const summary = saidOn(style, "summary");
-  const what = STYLE_DIMENSIONS.flatMap((d) => {
-    const t = saidOn(style, d);
-    return t ? [{ dim: d, text: t }] : [];
-  });
-  const marked = new Set(cues.flatMap((c) => c.paragraphs.map((p) => p - 1)));
-  const stale = note !== undefined && note.bodyHash !== bodyHash;
-  const ask = () => void styles.readNote(looking.draft, reference, body, bodyHash);
+  const stale = reading !== undefined && reading.bodyHash !== bodyHash;
+  const ask = () => void styles.readDraft(looking.draft, reference, body, bodyHash);
+  const shownOpen = open ?? reading?.cues[0]?.id ?? null;
+  const marked = new Set(
+    (reading?.cues ?? []).flatMap((c) => (c.paragraph ? [c.paragraph - 1] : [])),
+  );
 
   return (
     <>
@@ -539,7 +485,7 @@ function LookingAt({ view }: { view: EditorView | null }) {
         </span>
         <span className="style-head-actions">
           <button className="link-btn" onClick={() => styles.open(reference, true)}>
-            See its schema
+            See what it does
           </button>
           <button className="link-btn" onClick={() => styles.open(reference)}>
             Open the style
@@ -550,33 +496,29 @@ function LookingAt({ view }: { view: EditorView | null }) {
         </span>
       </header>
 
-      <section className="style-dim" aria-label="What the style does">
-        <div className="notes-section">What the style does</div>
-        {summary && <p className="style-summary">{summary}</p>}
-        {what.length > 0 && (
-          <dl className="style-what">
-            {what.map((w) => (
-              <div key={w.dim}>
-                <dt>{DIMENSION_LABEL[w.dim]}</dt>
-                <dd>{w.text}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        {!summary && what.length === 0 && (
-          <p className="style-small">
-            {describing
-              ? "The editor is putting the style into words…"
-              : style.pieces.length === 0
-                ? "The style has no pieces yet: open it and paste a few."
-                : "Not described yet: open the style and choose “Describe in words”."}
-          </p>
-        )}
-      </section>
-
-      <section className="style-tips" aria-label="The editor's note">
-        <div className="notes-section">The editor’s note</div>
-        {noting ? (
+      <section className="style-tips" aria-label="The draft and the style">
+        <div className="notes-section">The draft and the style</div>
+        {procedures.length === 0 ? (
+          <div className="style-busy">
+            <span className="style-small">
+              {describing
+                ? "The editor is reading the style’s pieces…"
+                : style.pieces.length === 0
+                  ? "The style has no pieces yet: open it and paste a few."
+                  : style.procedures.length > 0
+                    ? "You set aside every procedure of the style."
+                    : "The style has not been read yet."}
+            </span>
+            {!describing && style.pieces.length > 0 && style.procedures.length === 0 && (
+              <button
+                className="btn-primary btn-small style-primary"
+                onClick={() => void styles.readProcedures(reference)}
+              >
+                Read the style
+              </button>
+            )}
+          </div>
+        ) : noting ? (
           <div className="style-busy">
             <span className="style-small">The editor is reading the draft beside the style…</span>
             <button className="btn-secondary btn-small" onClick={styles.cancelNote}>
@@ -584,89 +526,60 @@ function LookingAt({ view }: { view: EditorView | null }) {
             </button>
           </div>
         ) : (
-          style.pieces.length > 0 &&
-          (!note || stale) && (
+          <>
+            {reading?.summary && <p className="style-reading-summary">{reading.summary}</p>}
             <div className="style-busy">
               {stale && <span className="style-small">The text has changed since.</span>}
-              <button className="btn-primary btn-small style-primary" onClick={ask}>
-                {note ? "Read again" : "Ask the editor"}
+              <button
+                className={
+                  !reading || stale
+                    ? "btn-primary btn-small style-primary"
+                    : "btn-secondary btn-small"
+                }
+                onClick={ask}
+              >
+                {reading ? "Read again" : "Ask the editor"}
               </button>
             </div>
-          )
+          </>
         )}
         {noteError && !noting && <p className="style-error">{noteError}</p>}
-        {note?.summary && <p className="style-lead">{note.summary}</p>}
-
-        {style.pieces.length > 0 && cues.length === 0 && (
-          <p className="notes-empty">
-            {comparison.cues.length > 0
-              ? "You set every cue aside."
-              : m.words < DRAFT_MIN_WORDS
-                ? `Under ${DRAFT_MIN_WORDS} words there is little to compare: keep writing.`
-                : "Nothing to point out: the draft follows the style’s patterns."}
-          </p>
-        )}
-        {cues.length > 0 && (
-          <ol className="notes-ol style-notes">
-            {cues.map((c, i) => {
-              const said = note?.notes[c.id];
-              return (
-                <li
-                  key={c.id}
-                  className="notes-item style-cue"
-                  data-n={i + 1}
-                  data-focus={focusCue === i + 1}
-                >
-                  <div className="note style-note">
-                    <div className="style-note-text">
-                      <span className="style-number">{i + 1}</span>
-                      <span>
-                        <span className="style-cue-tag">
-                          {DIMENSION_LABEL[c.dim]} · {where(c)}
-                        </span>
-                        {said ? (
-                          <>
-                            <span className="note-text">{said}</span>
-                            <span className="style-cue-numbers">{c.text}</span>
-                          </>
-                        ) : (
-                          <span className="note-text">{c.text}</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="note-actions">
-                      {c.paragraphs.length > 0 && (
-                        <button
-                          className="btn-secondary btn-small"
-                          onClick={() => {
-                            const w = c.words[0];
-                            if (w) goTo(w.from, w.to);
-                            else if (c.at !== null) goTo(c.at);
-                          }}
-                        >
-                          Go to ¶{c.paragraphs[0]}
-                        </button>
-                      )}
-                      <button
-                        className="btn-secondary btn-small"
-                        onClick={() => styles.hide(looking.draft, c.id)}
-                      >
-                        Not for this text
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-        {comparison.inLine.length > 0 && (
+        {!reading && m.words < DRAFT_MIN_WORDS && procedures.length > 0 && (
           <p className="style-small">
-            In line with the style:{" "}
-            {comparison.inLine.map((d) => DIMENSION_LABEL[d].toLowerCase()).join(", ")}.
+            Under {DRAFT_MIN_WORDS} words there is little to read beside the style.
           </p>
         )}
       </section>
+
+      {reading && (
+        <section className="style-tips" aria-label="Paragraph by paragraph">
+          <div className="notes-section">Paragraph by paragraph</div>
+          {reading.cues.length === 0 ? (
+            <p className="notes-empty">
+              The editor found no procedure of the style at stake in this draft.
+            </p>
+          ) : (
+            <ol className="notes-ol style-notes">
+              {reading.cues.map((c, i) => (
+                <ReadingCueItem
+                  key={c.id}
+                  cue={c}
+                  n={i + 1}
+                  style={style}
+                  sentences={sentences}
+                  schema={schema}
+                  m={m}
+                  functions={reading.functions}
+                  focus={focusCue === i + 1}
+                  open={shownOpen === c.id}
+                  onToggle={() => setOpen(shownOpen === c.id ? "" : c.id)}
+                  goTo={goTo}
+                />
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
 
       <details className="style-numbers">
         <summary>The numbers</summary>
@@ -684,6 +597,22 @@ function LookingAt({ view }: { view: EditorView | null }) {
               A bar per sentence, paragraph by paragraph; short ones in sienna. The band: the
               style’s usual length.
             </p>
+          </section>
+        )}
+        {comparison.cues.length > 0 && (
+          <section className="style-dim" aria-label="What the numbers say">
+            <div className="notes-section">What the numbers say</div>
+            <ul className="style-said-list">
+              {comparison.cues.map((c) => (
+                <li key={c.id}>
+                  <span className="style-cue-tag">
+                    {DIMENSION_LABEL[c.dim]} ·{" "}
+                    {c.paragraphs.length ? `¶${c.paragraphs.join(", ¶")}` : "whole draft"}
+                  </span>
+                  {c.text}
+                </li>
+              ))}
+            </ul>
           </section>
         )}
         {STYLE_DIMENSIONS.map((dim) => {
@@ -722,30 +651,157 @@ function LookingAt({ view }: { view: EditorView | null }) {
   );
 }
 
-/** Saves the traits in the open style file, then reloads it (the editor and the file agree). */
-async function saveTraits(path: string, traits: StyleTrait[]) {
-  if (await session.patchFrontMatter({ traits: traitsForFile(traits) })) {
-    await session.open(path, true);
-    void styles.load();
-  }
+const NO_STYLE: Pick<Style, "pieces"> = { pieces: [] };
+
+/** A cue of the reading: where, what the paragraph does, the procedure, the note, the passage. */
+function ReadingCueItem({
+  cue,
+  n,
+  style,
+  sentences,
+  schema,
+  m,
+  functions,
+  focus,
+  open,
+  onToggle,
+  goTo,
+}: {
+  cue: ReadingCue;
+  n: number;
+  style: Style;
+  sentences: PieceSentence[];
+  schema: StyleSchema;
+  m: MeasuredText;
+  functions: string[];
+  focus: boolean;
+  open: boolean;
+  onToggle: () => void;
+  goTo: (from: number) => void;
+}) {
+  const procedure = style.procedures.find(
+    (p) => p.name.toLowerCase() === cue.procedure.name.toLowerCase(),
+  );
+  const located = useLocated(style, procedure, sentences);
+  const index = cue.paragraph ? cue.paragraph - 1 : -1;
+  const para = m.paragraphs[index];
+  const fn = functions[index];
+  return (
+    <li className="notes-item style-cue" data-n={n} data-focus={focus}>
+      <div className="note style-note">
+        <div className="style-note-text">
+          <span className="style-number" data-tone={cue.outcome}>
+            {n}
+          </span>
+          <span className="style-cue-body">
+            <span className="style-cue-tag">
+              {cue.paragraph ? `¶${cue.paragraph}${fn ? ` · ${fn}` : ""}` : "Whole draft"}
+              <span className="style-outcome" data-tone={cue.outcome}>
+                {OUTCOME_LABEL[cue.outcome]}
+              </span>
+            </span>
+            <span className="style-cue-proc">{cue.procedure.name}</span>
+            <span className="note-text">{cue.note}</span>
+          </span>
+        </div>
+        <CueEvidence
+          cue={cue}
+          index={index}
+          m={m}
+          schema={schema}
+          located={located}
+          sentences={sentences}
+        />
+        {open && located.length > 0 && (
+          <PassageSlip passages={located} lead="How the style does it" />
+        )}
+        <div className="note-actions">
+          {located.length > 0 && (
+            <button className="link-btn style-slip-btn" onClick={onToggle} aria-expanded={open}>
+              {open ? "Hide the style’s passage" : "How the style does it ▸"}
+            </button>
+          )}
+          {para && (
+            <button className="btn-secondary btn-small" onClick={() => goTo(para.from)}>
+              Go to ¶{cue.paragraph}
+            </button>
+          )}
+        </div>
+      </div>
+    </li>
+  );
 }
 
-/** Chips of words with how often they come; the ones never used struck through. */
-export function Words({ used, never }: { used: { word: string; n: number }[]; never?: string[] }) {
-  return (
-    <span className="style-chips">
-      {used.map((w) => (
-        <span key={w.word} className="style-chip">
-          {w.word} <small>×{w.n}</small>
-        </span>
-      ))}
-      {never?.map((w) => (
-        <span key={w} className="style-chip" data-never>
-          {w}
-        </span>
-      ))}
-    </span>
-  );
+/**
+ * The code's numbers under a cue on a paragraph: its sentences beside a paragraph of the style
+ * where the procedure happens (for a paragraph's or a sentence's procedure), or the connectives
+ * it uses that the style never does (for the links).
+ */
+function CueEvidence({
+  cue,
+  index,
+  m,
+  schema,
+  located,
+  sentences,
+}: {
+  cue: ReadingCue;
+  index: number;
+  m: MeasuredText;
+  schema: StyleSchema;
+  located: ReturnType<typeof useLocated>;
+  sentences: PieceSentence[];
+}) {
+  const para = m.paragraphs[index];
+  if (!para) return null;
+  const part = cue.procedure.part;
+  if (part === "paragraph" || part === "sentence") {
+    const mine = m.sentences.slice(para.first, para.first + para.sentences).map((s) => s.words);
+    const at = located[0];
+    const theirs = at
+      ? sentences
+          .filter((s) => s.piece === at.piece && s.para === at.para - 1)
+          .map((s) => countWords(s.text))
+      : [];
+    return (
+      <div
+        className="style-mini"
+        role="img"
+        aria-label="The paragraph's sentences beside a paragraph of the style"
+      >
+        <span>¶{index + 1} of the draft</span>
+        <RhythmBars lengths={mine} height={32} />
+        {theirs.length > 0 && (
+          <>
+            <span>a paragraph of the style</span>
+            <RhythmBars lengths={theirs} height={32} />
+          </>
+        )}
+      </div>
+    );
+  }
+  if (part === "links") {
+    const uses = new Set(schema.connectives.map((c) => c.word));
+    const counted = new Map<string, number>();
+    for (const c of m.connectives) {
+      if (c.para === index && !uses.has(c.word))
+        counted.set(c.word, (counted.get(c.word) ?? 0) + 1);
+    }
+    if (!counted.size) return null;
+    return (
+      <div className="proc-ev">
+        <span className="proc-ev-label">In ¶{index + 1}, links the style never uses</span>
+        <Words used={[]} never={[...counted.keys()]} />
+        {schema.connectives.length > 0 && (
+          <>
+            <span className="proc-ev-label">The style links with</span>
+            <Words used={schema.connectives.slice(0, 3)} />
+          </>
+        )}
+      </div>
+    );
+  }
+  return null;
 }
 
 export const OPENER_LABEL = {
@@ -827,10 +883,17 @@ export function DimensionExtra({
   return null;
 }
 
-/** A style file, open in the editor: its schema, and the sentences that put it into words. */
+/** Saves a change in the open style file's front matter, then reloads it. */
+async function saveFrontMatter(path: string, patch: Record<string, unknown>) {
+  if (await session.patchFrontMatter(patch)) {
+    await session.open(path, true);
+    void styles.load();
+  }
+}
+
 /**
- * The open style file: its sentences from the file as loaded, its pieces from the page as it is
- * now, its schema; and what can be done with its sentences.
+ * The open style file: its summary and procedures from the file as loaded, its pieces from the
+ * page as it is now, its measures; and what can be done with what the model read.
  */
 export function useThisStyle(view: EditorView | null) {
   const path = useDoc((s) => s.path) ?? "";
@@ -843,29 +906,66 @@ export function useThisStyle(view: EditorView | null) {
   }, [text, body]);
   const pack = usePack(style.lang ?? useDoc.getState().lang.code);
   const schema = useMemo(() => styleSchema(style, pack), [style, pack]);
-  const describe = async () => {
+  const sentences = useSentences(style, pack);
+  const readAgain = async () => {
     await session.saveNow();
-    void styles.readTraits(path);
+    void styles.readProcedures(path);
   };
-  const setState = (t: StyleTrait, state: StyleTrait["state"]) =>
-    void saveTraits(
-      path,
-      style.traits.map((x) => (x === t ? { ...x, state } : x)),
-    );
-  return { path, reading, style, schema, describe, setState };
+  const setTraitState = (t: StyleTrait, state: StyleTrait["state"]) =>
+    void saveFrontMatter(path, {
+      traits: traitsForFile(style.traits.map((x) => (x === t ? { ...x, state } : x))),
+    });
+  const setProcedureState = (p: Procedure, state: Procedure["state"]) =>
+    void saveFrontMatter(path, {
+      procedures: proceduresForFile(style.procedures.map((x) => (x === p ? { ...x, state } : x))),
+    });
+  return {
+    path,
+    reading,
+    style,
+    schema,
+    sentences,
+    readAgain,
+    setTraitState,
+    setProcedureState,
+  };
+}
+
+/** A procedure in short, on the style's card: where it works, what it does, its state. */
+function ProcedureLine({
+  procedure,
+  style,
+  sentences,
+  onState,
+}: {
+  procedure: Procedure;
+  style: Style;
+  sentences: PieceSentence[];
+  onState: (state: Procedure["state"]) => void;
+}) {
+  const located = useLocated(style, procedure, sentences);
+  const off = procedure.state === "off";
+  return (
+    <div className="style-said proc-line" data-state={procedure.state ?? "active"}>
+      <span className="proc-part">{procedure.part ? PART_LABEL[procedure.part] : "Procedure"}</span>
+      <p>{procedure.name}</p>
+      {!off && <PieceDots pieces={style.pieces.length} located={located} />}
+      <StateRow state={procedure.state} onState={onState} />
+    </div>
+  );
 }
 
 function ThisStyle({ view }: { view: EditorView | null }) {
-  const { path, reading, style, schema, describe, setState } = useThisStyle(view);
+  const { path, reading, style, schema, sentences, readAgain, setTraitState, setProcedureState } =
+    useThisStyle(view);
   const [added, setAdded] = useState("");
   const schemaOpen = useStyles((s) => s.schemaOpen);
-  const sentence = (dim: TraitDim) =>
-    style.traits
-      .filter((t) => t.dim === dim)
-      .map((t, i) => (
-        <TraitLine key={`${dim}-${i}`} trait={t} onState={(state) => setState(t, state)} />
-      ));
+  const summary = style.traits.filter((t) => t.dim === "summary");
   const own = style.traits.filter((t) => !t.dim);
+  const procedures = [
+    ...style.procedures.filter((p) => p.state !== "off"),
+    ...style.procedures.filter((p) => p.state === "off"),
+  ];
 
   return (
     <>
@@ -882,7 +982,7 @@ function ThisStyle({ view }: { view: EditorView | null }) {
             aria-pressed={schemaOpen}
             onClick={() => styles.toggleSchema()}
           >
-            {schemaOpen ? "Back to the pieces" : "See the schema"}
+            {schemaOpen ? "Back to the pieces" : "See what it does"}
           </button>
         )}
       </header>
@@ -895,28 +995,46 @@ function ThisStyle({ view }: { view: EditorView | null }) {
         <>
           <section className="style-dim" aria-label="The style in brief">
             <div className="notes-section">In brief</div>
-            {sentence("summary")}
+            {summary.map((t, i) => (
+              <TraitLine key={i} trait={t} onState={(state) => setTraitState(t, state)} />
+            ))}
             {reading ? (
-              <p className="style-small">The model is putting the schema into words…</p>
+              <p className="style-small">The model is reading the pieces…</p>
             ) : (
               <button
                 className="btn-secondary btn-small"
-                onClick={() => void describe()}
-                data-tip="The sentences you kept or set aside stay"
+                onClick={() => void readAgain()}
+                data-tip="The procedures you kept or set aside stay"
               >
-                {style.traits.some((t) => t.dim) ? "Describe again" : "Describe in words"}
+                {style.procedures.length ? "Read again" : "Read the style"}
               </button>
             )}
           </section>
-          {STYLE_DIMENSIONS.map((dim) => {
-            const defs = schema.defs.filter((d) => d.dim === dim);
-            if (!defs.length) return null;
-            return (
-              <section key={dim} className="style-dim" aria-label={DIMENSION_LABEL[dim]}>
-                <div className="notes-section">{DIMENSION_LABEL[dim]}</div>
-                {sentence(dim)}
-                <details className="style-numbers">
-                  <summary>The numbers</summary>
+          <section className="style-dim" aria-label="What it does">
+            <div className="notes-section">What it does</div>
+            {procedures.length === 0 && !reading && (
+              <p className="style-small">
+                The model has not read the pieces yet: “Read the style” finds its procedures.
+              </p>
+            )}
+            {procedures.map((p) => (
+              <ProcedureLine
+                key={p.name}
+                procedure={p}
+                style={style}
+                sentences={sentences}
+                onState={(state) => setProcedureState(p, state)}
+              />
+            ))}
+          </section>
+          <details className="style-numbers">
+            <summary>The measures</summary>
+            {STYLE_DIMENSIONS.map((dim) => {
+              const defs = schema.defs.filter((d) => d.dim === dim);
+              if (!defs.length) return null;
+              return (
+                <section key={dim} className="style-dim" aria-label={DIMENSION_LABEL[dim]}>
+                  <div className="notes-section">{DIMENSION_LABEL[dim]}</div>
                   <DimensionExtra dim={dim} schema={schema} />
                   <div className="style-print">
                     {defs.map((d) => {
@@ -934,10 +1052,10 @@ function ThisStyle({ view }: { view: EditorView | null }) {
                       );
                     })}
                   </div>
-                </details>
-              </section>
-            );
-          })}
+                </section>
+              );
+            })}
+          </details>
           {style.words < STYLE_MIN_WORDS && (
             <p className="style-small">
               Under {STYLE_MIN_WORDS} words the ranges are provisional: add a piece.
@@ -945,12 +1063,12 @@ function ThisStyle({ view }: { view: EditorView | null }) {
           )}
           {style.words > STYLE_MAX_WORDS && (
             <p className="style-small">
-              Over {STYLE_MAX_WORDS.toLocaleString()} words the style takes longer to measure.
+              Over {STYLE_MAX_WORDS.toLocaleString()} words the style takes longer to read.
             </p>
           )}
           <p className="style-small">
-            The measures come from the pieces, without the model; the model only writes the
-            sentences, from the numbers.
+            The model reads the procedures in the pieces, each with the sentences where it happens;
+            the measures are Bluepencil’s, without the model.
           </p>
         </>
       )}
@@ -961,14 +1079,16 @@ function ThisStyle({ view }: { view: EditorView | null }) {
           <p className="style-small">What you notice in the style, in your words.</p>
         )}
         {own.map((t, i) => (
-          <TraitLine key={`own-${i}`} trait={t} onState={(state) => setState(t, state)} />
+          <TraitLine key={`own-${i}`} trait={t} onState={(state) => setTraitState(t, state)} />
         ))}
         <form
           className="style-new-row"
           onSubmit={(e) => {
             e.preventDefault();
             if (!added.trim()) return;
-            void saveTraits(path, [...style.traits, { text: added.trim(), state: "fixed" }]);
+            void saveFrontMatter(path, {
+              traits: traitsForFile([...style.traits, { text: added.trim(), state: "fixed" }]),
+            });
             setAdded("");
           }}
         >

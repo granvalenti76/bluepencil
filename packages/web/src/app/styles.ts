@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import {
-  mergeTraits,
+  mergeRead,
+  proceduresForFile,
   readStyle,
   traitsForFile,
   type Style,
   type StyleComparison,
-  type StyleNote,
+  type StyleReading,
   type StyleSchema,
 } from "@desk/core";
 import { api, errorMessage, type NewStyle, type StyleSummary } from "./api.ts";
@@ -14,10 +15,11 @@ import { session } from "./session.ts";
 
 /**
  * Styles, the process around them. A style is made in one go (the "New style" window: labels and
- * pasted pieces) or grows from the author's reading ("To a style" on a selection). Its schema is
- * measured in the page; every time its pieces change, the model puts it into words again, in the
- * background, keeping the sentences the author kept or set aside. A draft looks at one style
- * ("Look at"); the comparison follows the text as it changes, and Style mode sets it beside it.
+ * pasted pieces) or grows from the author's reading ("To a style" on a selection). Every time its
+ * pieces change, the model reads its procedures again, in the background, keeping the ones the
+ * author kept or set aside; its measures are the page's. A draft looks at one style ("Look at");
+ * the editor reads the draft beside it, paragraph by paragraph, and Style mode sets that reading
+ * beside the page.
  */
 
 /** The open draft beside the style it looks at: measured again as the text changes. */
@@ -39,23 +41,21 @@ interface StylesState {
   list: StyleSummary[];
   libraryOpen: boolean;
   dialog: StyleDialog | null;
-  /** Styles the model is putting into words now, in the background. */
+  /** Styles the model is reading now, in the background. */
   reading: string[];
   error: string | null;
   looking: Looking | null;
   /** The style the open draft looks at is gone. */
   missing: string | null;
-  /** On a style file: its schema on the page, in place of the pieces. */
+  /** On a style file: what it does on the page, in place of the pieces. */
   schemaOpen: boolean;
   /** A cue's number clicked on the page: its card is shown. */
   focusCue: number | null;
-  /** The editor's last note per draft, with the style and the text it was written on. */
-  notes: Record<string, StyleNote & { style: string; bodyHash: string }>;
+  /** The editor's last reading per draft, with the style and the text it was written on. */
+  readings: Record<string, StyleReading & { style: string; bodyHash: string }>;
   /** The editor is reading the open draft beside the style. */
   noting: boolean;
   noteError: string | null;
-  /** Cues set aside ("Not for this text") while the page stays open, by cue id, per draft. */
-  hidden: Record<string, string[]>;
 }
 
 export const useStyles = create<StylesState>()(() => ({
@@ -69,10 +69,9 @@ export const useStyles = create<StylesState>()(() => ({
   missing: null,
   focusCue: null,
   schemaOpen: false,
-  notes: {},
+  readings: {},
   noting: false,
   noteError: null,
-  hidden: {},
 }));
 
 /** Opens a file like the drafts list does: in the address too. */
@@ -84,7 +83,7 @@ function openPath(path: string) {
 }
 
 let noteController: AbortController | null = null;
-/** Styles described once in this session without being asked: not again if it failed. */
+/** Styles read once in this session without being asked: not again if it failed. */
 const described = new Set<string>();
 
 const fail = (e: unknown, fallback: string) =>
@@ -99,7 +98,7 @@ export const styles = {
       fail(e, "Couldn’t read the styles");
     }
   },
-  /** Opens a style; `schema`: on its schema rather than on its pieces. */
+  /** Opens a style; `schema`: on what it does rather than on its pieces. */
   open(path: string, schema = false) {
     useStyles.setState({ libraryOpen: false, schemaOpen: schema });
     openPath(path);
@@ -131,7 +130,7 @@ export const styles = {
     useStyles.setState({ dialog: null });
   },
 
-  /** Writes the new style; its traits are read right after, in the background. */
+  /** Writes the new style; its procedures are read right after, in the background. */
   async create(style: NewStyle, lookAt: boolean): Promise<string | null> {
     try {
       const { path, pieces } = await api.createStyle(style);
@@ -139,20 +138,20 @@ export const styles = {
       void session.refreshList();
       if (lookAt) await styles.setReference(path);
       else await styles.load();
-      if (pieces > 0) void styles.readTraits(path);
+      if (pieces > 0) void styles.readProcedures(path);
       return path;
     } catch (e) {
       fail(e, "Couldn’t create the style");
       return null;
     }
   },
-  /** A passage becomes a piece of a style; the traits are read again. */
+  /** A passage becomes a piece of a style; its procedures are read again. */
   async addPiece(path: string, text: string, title: string): Promise<boolean> {
     try {
       await api.addStylePiece(path, text, title || undefined);
       useStyles.setState({ dialog: null });
       void styles.load();
-      void styles.readTraits(path);
+      void styles.readProcedures(path);
       return true;
     } catch (e) {
       fail(e, "Couldn’t add the piece");
@@ -167,49 +166,51 @@ export const styles = {
   },
 
   /**
-   * The model puts a style's schema into words. A style not open in the editor: the server writes
-   * the sentences into the file. The open one: they go through the editor, so the page and the
-   * file agree.
+   * The model reads a style's procedures in its pieces. A style not open in the editor: the server
+   * writes them into the file. The open one: they go through the editor, so the page and the file
+   * agree.
    */
-  async readTraits(path: string) {
+  async readProcedures(path: string) {
     if (useStyles.getState().reading.includes(path)) return;
     useStyles.setState((s) => ({ reading: [...s.reading, path], error: null }));
     const open = () => useDoc.getState().path === path;
     try {
-      const { traits } = await api.readStyleTraits(path, !open());
+      const read = await api.readStyleProcedures(path, !open());
       if (open()) {
-        const merged = mergeTraits(
-          readStyle(session.getView()?.state.doc.toString() ?? useDoc.getState().text).traits,
-          traits,
-        );
-        if (await session.patchFrontMatter({ traits: traitsForFile(merged) })) {
-          await session.open(path, true);
-        }
+        const now = readStyle(session.getView()?.state.doc.toString() ?? useDoc.getState().text);
+        const merged = mergeRead(now, read);
+        const saved = await session.patchFrontMatter({
+          traits: traitsForFile(merged.traits),
+          procedures: proceduresForFile(merged.procedures),
+        });
+        if (saved) await session.open(path, true);
       }
     } catch (e) {
-      fail(e, "The model couldn’t describe the style");
+      fail(e, "The model couldn’t read the style");
     } finally {
       useStyles.setState((s) => ({ reading: s.reading.filter((p) => p !== path) }));
       void styles.load();
     }
   },
 
-  /** A style a draft looks at, never put into words yet: the model does it, once, in the background. */
-  describeIfNew(path: string, style: Style) {
-    if (described.has(path) || style.pieces.length === 0 || style.traits.some((t) => t.dim)) return;
+  /** A style a draft looks at, never read for its procedures: the model does it, once, in the background. */
+  readIfNew(path: string, style: Style) {
+    if (described.has(path) || style.pieces.length === 0 || style.procedures.length > 0) return;
     described.add(path);
-    void styles.readTraits(path);
+    void styles.readProcedures(path);
   },
 
-  /** The editor's note on the draft beside the style: what the style does where the draft differs. */
-  async readNote(draft: string, style: string, body: string, bodyHash: string) {
+  /** The editor reads the draft beside the style, paragraph by paragraph. */
+  async readDraft(draft: string, style: string, body: string, bodyHash: string) {
     noteController?.abort();
     const mine = new AbortController();
     noteController = mine;
     useStyles.setState({ noting: true, noteError: null });
     try {
-      const note = await api.styleNote(style, body, mine.signal);
-      useStyles.setState((s) => ({ notes: { ...s.notes, [draft]: { ...note, style, bodyHash } } }));
+      const reading = await api.styleReading(style, body, mine.signal);
+      useStyles.setState((s) => ({
+        readings: { ...s.readings, [draft]: { ...reading, style, bodyHash } },
+      }));
     } catch (e) {
       if (!mine.signal.aborted) {
         useStyles.setState({ noteError: errorMessage(e, "The editor couldn’t answer") });
@@ -223,11 +224,5 @@ export const styles = {
   },
   cancelNote() {
     noteController?.abort();
-  },
-
-  hide(draft: string, cue: string) {
-    useStyles.setState((s) => ({
-      hidden: { ...s.hidden, [draft]: [...(s.hidden[draft] ?? []), cue] },
-    }));
   },
 };

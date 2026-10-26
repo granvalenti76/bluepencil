@@ -1,16 +1,11 @@
 import { z } from "zod";
 import { parseDraft } from "../document/frontmatter.ts";
 import { countWords } from "../document/wordcount.ts";
-import type { LanguagePack } from "../languages/pack.ts";
-import type { ChatMessage } from "../model/types.ts";
-import { extractAllJson } from "../model/json.ts";
-import { withoutNulls } from "../judgments/schema.ts";
 import {
-  DIMENSION_LABEL,
-  formatMeasure,
   measureDefs,
   measureText,
   STYLE_DIMENSIONS,
+  STYLE_SHORT_SENTENCE,
   type MeasureDef,
   type MeasureLanguage,
 } from "./measures.ts";
@@ -19,12 +14,13 @@ import {
  * Styles: references the author builds in the editor from pieces of books, articles or their own
  * texts, and looks at while writing a draft. A style is a Markdown file in `Styles/` inside the
  * drafts folder: labels in the front matter (name in `title`, `author`, `source`, `lang`, `tags`),
- * one piece per `##` section (the heading says where it comes from), and its traits. The schema
- * of the style (rhythm, vocabulary, construction, voice) is measured from the pieces by the code;
- * the model only puts it into words, one sentence per dimension plus a summary, and the author
- * keeps or sets aside each sentence, or adds their own. A draft looks at one style (`reference:`
- * in its front matter). Bluepencil never rewrites in a style: it shows where the draft's patterns
- * differ from the style's, and the author decides.
+ * one piece per `##` section (the heading says where it comes from), its summary and its
+ * procedures. What the style does is read by the model in the pieces, whole: its procedures, each
+ * with the sentences where it happens; the author keeps or sets aside each one. The measures
+ * (rhythm, vocabulary, construction, voice) are the code's, and stand beside them as evidence. A
+ * draft looks at one style (`reference:` in its front matter). Bluepencil never rewrites in a
+ * style: it says, paragraph by paragraph, which procedure of the style is at stake and how the
+ * draft stands beside it, and the author decides.
  */
 export const STYLES_DIR = "Styles";
 export const isStylePath = (path: string) => path.startsWith(`${STYLES_DIR}/`);
@@ -49,6 +45,61 @@ export const StyleTraitSchema = z.object({
 });
 export type StyleTrait = z.infer<typeof StyleTraitSchema>;
 
+/** Where in a piece a procedure works. */
+export const PROCEDURE_PARTS = [
+  "opening",
+  "paragraph",
+  "sentence",
+  "links",
+  "people",
+  "images",
+  "words",
+  "time",
+  "voice",
+  "ending",
+] as const;
+export type ProcedurePart = (typeof PROCEDURE_PARTS)[number];
+
+export const PART_LABEL: Record<ProcedurePart, string> = {
+  opening: "Opening",
+  paragraph: "Paragraph",
+  sentence: "Sentence",
+  links: "Links",
+  people: "People",
+  images: "Images",
+  words: "Words",
+  time: "Time",
+  voice: "Voice",
+  ending: "Ending",
+};
+
+/** A procedure of the style: a move that comes back in its pieces. */
+export const ProcedureSchema = z.object({
+  /** What it does, in a few words: "Opens on a thing, not on a theme". */
+  name: z.string().min(1),
+  part: z.enum(PROCEDURE_PARTS).optional(),
+  /** How it works, in one or two sentences. */
+  text: z.string().optional(),
+  /** Sentences of the pieces where it happens. */
+  passages: z.array(z.string()).optional(),
+  state: z.enum(TRAIT_STATES).optional(),
+});
+export type Procedure = z.infer<typeof ProcedureSchema>;
+
+/** The procedures that count: all but those set aside. */
+export const activeProcedures = (s: Pick<Style, "procedures">): Procedure[] =>
+  s.procedures.filter((p) => p.state !== "off");
+
+/** Procedures as they go in the front matter: no empty fields, `active` left out. */
+export const proceduresForFile = (procedures: Procedure[]) =>
+  procedures.map((p) => ({
+    name: p.name,
+    ...(p.part ? { part: p.part } : {}),
+    ...(p.text ? { text: p.text } : {}),
+    ...(p.passages?.length ? { passages: p.passages } : {}),
+    ...(p.state && p.state !== "active" ? { state: p.state } : {}),
+  }));
+
 export interface StylePiece {
   /** The `##` heading: where the piece comes from. */
   title: string;
@@ -63,6 +114,7 @@ export interface Style {
   lang?: string;
   tags: string[];
   traits: StyleTrait[];
+  procedures: Procedure[];
   pieces: StylePiece[];
   words: number;
 }
@@ -98,6 +150,12 @@ export function readStyle(text: string): Style {
         return p.success ? [p.data] : [];
       })
     : [];
+  const procedures = Array.isArray(raw.procedures)
+    ? raw.procedures.flatMap((p) => {
+        const parsed = ProcedureSchema.safeParse(typeof p === "string" ? { name: p } : p);
+        return parsed.success ? [parsed.data] : [];
+      })
+    : [];
   const tags = Array.isArray(raw.tags)
     ? raw.tags.map(str).filter(Boolean)
     : str(raw.tags)
@@ -111,6 +169,7 @@ export function readStyle(text: string): Style {
     ...(data.lang ? { lang: data.lang } : {}),
     tags,
     traits,
+    procedures,
     pieces,
     words: pieces.reduce((a, p) => a + p.words, 0),
   };
@@ -172,10 +231,15 @@ export function appendPiece(text: string, piece: NewPiece): string {
   return `${text.replace(/\s*$/, "")}\n\n## ${pieceHeading(piece.title, n)}\n\n${piece.text.trim()}\n`;
 }
 
-/** The first sentence of the style, for its card in the library: a trait's quote, or a piece's. */
-export function styleQuote(style: Pick<Style, "traits" | "pieces">): string {
-  const fromTrait = activeTraits(style).find((t) => t.quote)?.quote;
-  if (fromTrait) return fromTrait;
+/**
+ * The first sentence of the style, for its card in the library: where a procedure happens, a
+ * trait's quote, or a piece's first sentence.
+ */
+export function styleQuote(style: Pick<Style, "traits" | "procedures" | "pieces">): string {
+  const shown =
+    activeProcedures(style).find((p) => p.passages?.length)?.passages?.[0] ??
+    activeTraits(style).find((t) => t.quote)?.quote;
+  if (shown) return shown;
   const first = style.pieces[0]?.text.replace(/\s+/g, " ") ?? "";
   return /^.{10,160}?[.!?…](?=\s|$)/.exec(first)?.[0] ?? first.slice(0, 120);
 }
@@ -246,6 +310,8 @@ export interface StyleSchema {
   ranges: Record<string, StyleRange>;
   /** The lengths of the first sentences, in order: the rhythm bars. */
   rhythm: number[];
+  /** Paragraphs of two sentences or more that close on a short one, in percent. */
+  lastShort: number;
   /** Content words that come back, the most frequent first. */
   recurring: { word: string; n: number }[];
   /** Every connective the pieces use, the most frequent first. */
@@ -313,12 +379,17 @@ export function styleSchema(style: Pick<Style, "pieces">, lang: MeasureLanguage 
   const n = whole.sentences.length;
   const opened = (k: string) =>
     n ? Math.round((whole.sentences.filter((s) => s.opens === k).length * 100) / n) : 0;
+  const closing = whole.paragraphs.filter((p) => p.sentences >= 2);
+  const closedShort = closing.filter(
+    (p) => whole.sentences[p.first + p.sentences - 1]!.words <= STYLE_SHORT_SENTENCE,
+  ).length;
   return {
     words: whole.words,
     sentences: n,
     defs,
     ranges,
     rhythm: whole.sentences.slice(0, RHYTHM_BARS).map((s) => s.words),
+    lastShort: closing.length ? Math.round((closedShort * 100) / closing.length) : 0,
     recurring: byCount(whole.vocabulary)
       .filter((w) => w.n >= 3)
       .slice(0, 8),
@@ -345,85 +416,4 @@ function quantile(sorted: number[], q: number): number {
   const lo = Math.floor(i);
   const hi = Math.ceil(i);
   return Math.round((sorted[lo]! + (sorted[hi]! - sorted[lo]!) * (i - lo)) * 10) / 10;
-}
-
-// The model puts the schema into words. The fields are the contract with the reader and stay the
-// same in every language; the instructions come from the pack.
-
-/** The answer's keys for each dimension: the contract (Italian), and the English names. */
-const DIM_KEYS: Record<TraitDim, string[]> = {
-  summary: ["sintesi", "summary"],
-  rhythm: ["ritmo", "rhythm"],
-  lexicon: ["lessico", "vocabulary", "lexicon"],
-  construction: ["costruzione", "construction"],
-  voice: ["voce", "voice"],
-};
-
-const text = (v: unknown) =>
-  typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "";
-
-/**
- * The sentences the model wrote on the schema: one per dimension and a summary. Read leniently:
- * the first object with at least one of the keys; a missing or empty dimension is left out.
- * `null` only when nothing at all can be read (then the caller asks once more).
- */
-export function readTraitsAnswer(content: string): StyleTrait[] | null {
-  for (const v of extractAllJson(content)) {
-    const o = withoutNulls(v);
-    if (!o || typeof o !== "object" || Array.isArray(o)) continue;
-    const rec = o as Record<string, unknown>;
-    const traits = TRAIT_DIMS.flatMap((dim) => {
-      const t = DIM_KEYS[dim].map((k) => text(rec[k])).find(Boolean);
-      return t ? [{ text: t, dim }] : [];
-    });
-    if (traits.length) return traits;
-  }
-  return null;
-}
-
-/** The schema as the model reads it: the numbers by dimension, the words, the rhythm. */
-export function renderSchema(
-  style: Pick<Style, "name" | "author" | "source">,
-  schema: StyleSchema,
-) {
-  const out = [`STYLE: ${style.name}`];
-  if (style.author) out.push(`Author: ${style.author}`);
-  if (style.source) out.push(`Source: ${style.source}`);
-  out.push(`Measured on ${schema.words} words, ${schema.sentences} sentences.`);
-  const counted = (l: { word: string; n: number }[]) =>
-    l.map((w) => `${w.word} ×${w.n}`).join(", ");
-  for (const dim of STYLE_DIMENSIONS) {
-    out.push("", DIMENSION_LABEL[dim].toUpperCase());
-    for (const d of schema.defs.filter((x) => x.dim === dim)) {
-      const r = schema.ranges[d.id]!;
-      out.push(
-        `- ${d.label}: ${formatMeasure(d, r.all)} (most passages ${formatMeasure(d, r.lo)}–${formatMeasure(d, r.hi)})`,
-      );
-    }
-    if (dim === "rhythm" && schema.rhythm.length) {
-      out.push(`- Sentence lengths, in order: ${schema.rhythm.join(" ")}`);
-    }
-    if (dim === "lexicon") {
-      if (schema.recurring.length) out.push(`- Words that come back: ${counted(schema.recurring)}`);
-      if (schema.connectives.length) {
-        out.push(`- Connectives: ${counted(schema.connectives.slice(0, 8))}`);
-      }
-      if (schema.unused.length) out.push(`- Connectives never used: ${schema.unused.join(", ")}`);
-    }
-  }
-  return out.join("\n");
-}
-
-/** Putting a style's schema into words. `null` if the pack has no style prompt. */
-export function styleTraitsMessages(
-  pack: LanguagePack,
-  style: Style,
-  schema: StyleSchema = styleSchema(style, pack),
-): ChatMessage[] | null {
-  const prompt = pack.prompts["style-traits"];
-  if (!prompt) return null;
-  return [
-    { role: "system", content: prompt },
-    { role: "user", content: renderSchema(style, schema) },
-  ];
 }

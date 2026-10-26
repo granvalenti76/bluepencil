@@ -2615,9 +2615,27 @@ details.outline[open] > summary::before {
 }
 .style-number {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--sienna);
+  border-radius: 50%;
   font-family: var(--font-text);
-  font-style: italic;
+  font-size: 14px;
+  font-weight: var(--fw-bold);
   color: var(--sienna);
+}
+.style-number[data-tone="like"] {
+  border-color: var(--pencil);
+  color: var(--pencil);
+}
+.style-number[data-tone="missing"] {
+  border-style: dashed;
+  border-color: var(--text-faint);
+  color: var(--text-muted);
 }
 /* Cues are not the editor's pencil: ink, upright. */
 .notes-list .style-note .note-text {
@@ -2735,6 +2753,11 @@ details.outline[open] > summary::before {
 .shell[data-style-cues="true"] .cm-cue {
   border-bottom: 1.5px dotted var(--sienna);
 }
+/* Where the draft already does what the style does: the pencil, not the sienna. */
+.shell[data-mode="style"] .cm-cue[data-tone="like"],
+.shell[data-style-cues="true"] .cm-cue[data-tone="like"] {
+  border-bottom: 1.5px solid var(--pencil);
+}
 .shell[data-mode="style"] .cm-cue-n,
 .shell[data-style-cues="true"] .cm-cue-n {
   display: inline-flex;
@@ -2753,8 +2776,36 @@ details.outline[open] > summary::before {
   color: var(--sienna);
   cursor: pointer;
 }
+.shell[data-mode="style"] .cm-cue-n[data-tone="like"],
+.shell[data-style-cues="true"] .cm-cue-n[data-tone="like"] {
+  border-color: var(--pencil);
+  color: var(--pencil);
+}
+.shell[data-mode="style"] .cm-cue-n[data-tone="missing"],
+.shell[data-style-cues="true"] .cm-cue-n[data-tone="missing"] {
+  border-style: dashed;
+  border-color: var(--text-faint);
+  color: var(--text-muted);
+}
 .shell[data-style-cues="true"] .cm-cue-n:hover {
   background: var(--sienna-bg);
+}
+/* What a paragraph does, before its first word: in Style mode only. */
+.cm-cue-fn {
+  display: none;
+}
+.shell[data-mode="style"] .cm-cue-fn {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: 3px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--sienna-strong);
 }
 .cm-sel-style {
   margin-left: 4px;
@@ -2773,18 +2824,8 @@ details.outline[open] > summary::before {
   padding: 2px 0 0;
   border-bottom: 0;
 }
-.style-summary,
-.style-said-line {
-  margin: 4px 0 0;
-  font-family: var(--font-text);
-  font-size: 15px;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--text);
-}
-.style-said-line {
-  font-size: 14px;
-  color: var(--text-2);
+.style-dim > .btn-secondary {
+  align-self: flex-start;
 }
 .style-said {
   display: flex;
@@ -2963,43 +3004,11 @@ button.style-bars-para:hover {
   border-radius: 6px;
   box-shadow: 0 0 0 2px var(--sienna-band);
 }
-.style-what {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 2px 0 0;
-}
-.style-what div {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 8px;
-}
-.style-what dt {
-  padding-top: 2px;
-  font-size: var(--fs-caption);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.style-what dd {
-  margin: 0;
-  font-family: var(--font-text);
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--text);
-}
 .style-busy {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-}
-.style-cue-numbers {
-  display: block;
-  margin-top: 4px;
-  font-size: var(--fs-small);
-  line-height: 1.45;
-  color: var(--text-muted);
 }
 .style-numbers {
   padding: 4px 4px 8px;
@@ -3194,6 +3203,288 @@ button.style-bars-para:hover {
 }
 .library-card-summary {
   font-style: italic;
+}
+
+/* The editor's reading of a draft beside a style, cue by cue. */
+.style-note .style-note-text {
+  align-items: flex-start;
+}
+.style-cue-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.style-cue-tag .style-outcome {
+  margin-left: 8px;
+}
+.style-outcome {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--sienna-bg);
+  color: var(--sienna-strong);
+}
+.style-outcome[data-tone="like"] {
+  background: var(--accent-bg);
+  color: var(--accent-text);
+}
+.style-outcome[data-tone="missing"] {
+  background: var(--border-soft);
+  color: var(--text-muted);
+}
+.style-cue-proc {
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--text);
+}
+.style-reading-summary {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text);
+}
+.style-card .style-slip-btn {
+  align-self: center;
+}
+.style-said-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.style-mini {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: end;
+  gap: 6px 10px;
+  margin-left: 30px;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.style-mini .style-bars {
+  max-width: 160px;
+}
+
+/* A passage of the style on a slip of paper, taped down: the sentence where it happens marked. */
+.slip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 2px 2px;
+  padding: 20px 18px 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-1-hover);
+  transform: rotate(-0.35deg);
+}
+.style-card .slip {
+  margin-left: 30px;
+}
+.slip-tape {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 70px;
+  height: 18px;
+  margin-left: -35px;
+  background: var(--tape);
+  transform: rotate(1.5deg);
+}
+.slip-text {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.slip-text::before {
+  content: "«";
+}
+.slip-text::after {
+  content: "»";
+}
+.slip-text mark {
+  background: var(--sienna-bg);
+  box-shadow: 0 0 0 2px var(--sienna-bg);
+  color: var(--text);
+}
+.slip-src {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--fs-caption);
+  color: var(--sienna-strong);
+}
+
+/* The procedures of a style: on its page as cards, on its card as lines. */
+.proc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.proc-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.proc-section-head h2 {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text);
+}
+.proc-section-head h2 span {
+  font-size: 17px;
+  color: var(--text-muted);
+}
+.proc-section-head p {
+  max-width: 720px;
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.proc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  align-items: start;
+  gap: 18px;
+}
+.proc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px 22px 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card);
+}
+.proc-card[data-state="off"] {
+  border-style: dashed;
+  border-color: var(--card-rule);
+  background: transparent;
+  opacity: 0.75;
+}
+.proc-card[data-state="off"] .proc-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-faint);
+}
+.proc-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.proc-part {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: var(--sienna-bg);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--sienna-strong);
+}
+.proc-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.proc-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.proc-dots i {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--card-rule);
+  border-radius: 50%;
+}
+.proc-dots i[data-in="true"] {
+  border-color: var(--sienna);
+  background: var(--sienna);
+}
+.proc-name {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text);
+}
+.proc-text {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.proc-ev {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dotted var(--border);
+}
+.style-card .proc-ev {
+  margin-left: 30px;
+  padding-top: 6px;
+}
+.proc-ev-label {
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.proc-line {
+  align-self: stretch;
+}
+.proc-line p {
+  font-style: normal;
+}
+.proc-line .proc-where {
+  margin-top: -2px;
+}
+.schema-measures-box {
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--card);
+}
+.schema-measures-box > summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+.schema-measures-box[open] > summary {
+  margin-bottom: 16px;
+}
+.schema-measures-title {
+  font-family: var(--font-text);
+  font-size: 20px;
+  color: var(--text);
 }
 
 /* A style file: its labels at the top of its card. */

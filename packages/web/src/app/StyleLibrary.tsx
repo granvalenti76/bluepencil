@@ -98,7 +98,7 @@ function StyleLibrary() {
                 </span>
                 <span>
                   {reading.includes(s.path)
-                    ? "reading the schema…"
+                    ? "reading the pieces…"
                     : s.usedIn
                       ? `in ${s.usedIn} ${s.usedIn === 1 ? "draft" : "drafts"}`
                       : "not used yet"}
@@ -130,7 +130,7 @@ interface PieceDraft {
 
 /**
  * The "New style" window: the labels, then the pieces pasted one by one, each with where it comes
- * from. Bluepencil writes the file; the model puts its schema into words right after.
+ * from. Bluepencil writes the file; the model reads its procedures right after.
  */
 function NewStyleDialog({ dialog }: { dialog: Extract<StyleDialog, { kind: "new" }> }) {
   const draftLang = useDoc((s) => s.lang.code);
@@ -279,7 +279,7 @@ function NewStyleDialog({ dialog }: { dialog: Extract<StyleDialog, { kind: "new"
                   : words > STYLE_MAX_WORDS
                     ? `Over ${STYLE_MAX_WORDS.toLocaleString()} words a small model may not hold it all. `
                     : ""
-              }The model puts its schema into words right after.`}
+              }The model reads what the style does right after.`}
           {dialog.lookAt && " The draft will look at it."}
         </p>
         {error && <p className="modal-error">{error}</p>}

@@ -8,8 +8,8 @@ import type {
   PassState,
   ScoreKind,
   SectionInfo,
-  StyleNote,
-  StyleTrait,
+  StyleRead,
+  StyleReading,
 } from "@desk/core";
 
 /** The token arrives in the fragment (`#t=…`): it is saved in sessionStorage and removed from the address. */
@@ -155,7 +155,7 @@ export interface StyleSummary {
   tags: string[];
   pieces: number;
   words: number;
-  traits: number;
+  procedures: number;
   quote: string;
   /** The model's summary of the style. */
   summary?: string;
@@ -271,10 +271,10 @@ export const api = {
     request<{ path: string; pieces: number }>("POST", "/api/styles", style),
   addStylePiece: (path: string, text: string, title?: string) =>
     request<{ path: string; pieces: number }>("POST", "/api/styles/piece", { path, text, title }),
-  readStyleTraits: (path: string, save: boolean, signal?: AbortSignal) =>
-    request<{ traits: StyleTrait[] }>("POST", "/api/styles/traits", { path, save }, signal),
-  styleNote: (style: string, draft: string, signal?: AbortSignal) =>
-    request<StyleNote>("POST", "/api/styles/note", { style, draft }, signal),
+  readStyleProcedures: (path: string, save: boolean, signal?: AbortSignal) =>
+    request<StyleRead>("POST", "/api/styles/procedures", { path, save }, signal),
+  styleReading: (style: string, draft: string, signal?: AbortSignal) =>
+    request<StyleReading>("POST", "/api/styles/reading", { style, draft }, signal),
   listDrafts: async () => (await request<{ drafts: DraftRow[] }>("GET", "/api/drafts")).drafts,
   getDraft: (path: string) => request<DraftDetail>("GET", `/api/drafts/${enc(path)}`),
   /** "Clear suggestions": removes all the draft's notes (the text does not change). */

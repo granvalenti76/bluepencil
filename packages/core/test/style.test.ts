@@ -8,15 +8,19 @@ import {
   mergeTraits,
   newStyleText,
   readStyle,
-  readNoteAnswer,
-  readTraitsAnswer,
-  styleNoteMessages,
+  locatePassages,
+  mergeRead,
+  pieceSentences,
+  proceduresForFile,
+  readProceduresAnswer,
+  readReadingAnswer,
+  renderPieces,
+  styleProceduresMessages,
   styleQuote,
+  styleReadingMessages,
   styleSchema,
   styleSummary,
-  styleTraitsMessages,
   traitsForFile,
-  type LanguagePack,
 } from "../src/index.ts";
 import { builtinPack } from "./packs.ts";
 
@@ -215,6 +219,8 @@ describe("the schema of a style", () => {
     expect(schema.ranges.shortAfterLong!.all).toBe(100);
     expect(schema.ranges.adverbs).toEqual({ lo: 0, hi: 0, all: 0 });
     expect(schema.rhythm.slice(0, 4)).toEqual([29, 2, 22, 2]);
+    // Every paragraph closes on a short sentence ("Io dormivo.", "Io ascoltavo.").
+    expect(schema.lastShort).toBe(100);
     expect(schema.connectives.map((c) => c.word)).toEqual(["ma", "poi"]);
     expect(schema.unused).toContain("però");
     expect(schema.recurring.length).toBeGreaterThan(0);
@@ -269,85 +275,201 @@ describe("a draft beside the style", () => {
   });
 });
 
-describe("model messages", () => {
-  const packs: LanguagePack[] = [builtinPack("it"), builtinPack("en")];
-  test("the model reads the schema's numbers, not the pieces", () => {
-    for (const pack of packs) {
-      const s = readStyle(MOVING_STYLE);
-      const m = styleTraitsMessages(pack, s)!;
-      expect(m[0]!.content).toContain('"ritmo"');
-      expect(m[1]!.content).toContain("RHYTHM");
-      expect(m[1]!.content).toContain("Words per sentence:");
-      expect(m[1]!.content).not.toContain("Mio padre tornava");
-    }
-    const it = styleTraitsMessages(packs[0]!, readStyle(MOVING_STYLE))![1]!.content;
-    expect(it).toContain("- Connectives: ma ×8, poi ×8");
-    expect(it).not.toMatch(/Words that come back:.*\b(loro|alla|nessuno)\b/);
-    const bare = { ...packs[0]!, prompts: { ...packs[0]!.prompts, "style-traits": undefined } };
-    expect(styleTraitsMessages(bare, readStyle(STYLE))).toBeNull();
-  });
-});
-
-describe("reading the model's answer", () => {
-  test("one sentence per dimension; empty ones left out; English keys too", () => {
-    expect(
-      readTraitsAnswer(
-        "Ecco:\n```json\n" +
-          JSON.stringify({
-            sintesi: "Memoria.",
-            ritmo: "Lunghe e brevi.",
-            voce: "",
-            lessico: null,
-          }) +
-          "\n```",
-      ),
-    ).toEqual([
-      { text: "Memoria.", dim: "summary" },
-      { text: "Lunghe e brevi.", dim: "rhythm" },
-    ]);
-    expect(readTraitsAnswer(JSON.stringify({ voice: "First person." }))).toEqual([
-      { text: "First person.", dim: "voice" },
-    ]);
-    expect(readTraitsAnswer("Lo stile è sobrio.")).toBeNull();
-    expect(readTraitsAnswer(JSON.stringify({ altro: "x" }))).toBeNull();
-  });
-});
-
-describe("the editor's note on a draft", () => {
+describe("the procedures of a style", () => {
   const it = builtinPack("it");
   const style = readStyle(MOVING_STYLE);
-  const comparison = compareWithStyle(MARKET, styleSchema(style, it), it);
+  const sentences = pieceSentences(style, it);
 
-  test("the model reads the cues with their paragraphs, never the style's pieces", () => {
-    const withWords = {
-      ...style,
-      traits: [{ text: "Lunghe che si chiudono su una breve.", dim: "rhythm" as const }],
-    };
-    const m = styleNoteMessages(it, withWords, comparison, MARKET)!;
-    expect(m[0]!.content).toContain('"nota"');
-    expect(m[1]!.content).toContain("- Rhythm: Lunghe che si chiudono su una breve.");
-    expect(m[1]!.content).toMatch(/^1\. \[Vocabulary · ¶2\] 5 adverbs/m);
-    expect(m[1]!.content).toContain("Paragraph 3: <<<Ettore teneva le zucchine");
-    expect(m[1]!.content).not.toContain("Mio padre tornava la sera");
+  test("the model reads the pieces whole, every sentence numbered, paragraph by paragraph", () => {
+    expect(sentences[1]).toEqual({ n: 2, piece: 0, para: 0, text: "Poi mangiava." });
+    const shown = renderPieces(style, sentences);
+    expect(shown).toContain("PIECE 1 — Uno");
+    expect(shown).toMatch(/^¶1 \[1\] Mio padre tornava .* \[2\] Poi mangiava\. \[3\] Ma la luce/m);
+    expect(shown).toMatch(/^¶2 \[5\] D’estate/m);
+    for (const pack of [it, builtinPack("en")]) {
+      const m = styleProceduresMessages(pack, style)!;
+      expect(m[0]!.content).toContain('"procedimenti"');
+      expect(m[1]!.content).toContain("[4] Io dormivo.");
+    }
+    const bare = { ...it, prompts: { ...it.prompts, "style-procedures": undefined } };
+    expect(styleProceduresMessages(bare, style)).toBeNull();
   });
 
-  test("notes by cue number; unknown numbers dropped; nothing readable is null", () => {
-    const ids = comparison.cues.map((c) => c.id);
-    const r = readNoteAnswer(
+  test("procedures keep only sentences that exist; none, or no name, and they are dropped", () => {
+    const read = readProceduresAnswer(
+      "Ecco:\n```json\n" +
+        JSON.stringify({
+          sintesi: "Memoria che si chiude su una frase breve.",
+          procedimenti: [
+            {
+              parte: "paragrafo",
+              nome: "Chiude su una frase breve",
+              descrizione: "Due frasi lunghe, poi una corta.",
+              passi: [4, "[8]", 999, 4],
+            },
+            { parte: "attacco", nome: "Inventato", passi: [999] },
+            { nome: "", passi: [1] },
+            { parte: "boh", nome: "Lega con poi e ma", passi: "2, 6" },
+          ],
+        }) +
+        "\n```",
+      sentences,
+    );
+    expect(read).toEqual({
+      summary: "Memoria che si chiude su una frase breve.",
+      procedures: [
+        {
+          name: "Chiude su una frase breve",
+          part: "paragraph",
+          text: "Due frasi lunghe, poi una corta.",
+          passages: ["Io dormivo.", "Io ascoltavo."],
+        },
+        { name: "Lega con poi e ma", passages: ["Poi mangiava.", "Poi ripartivano."] },
+      ],
+    });
+    expect(
+      readProceduresAnswer(
+        JSON.stringify({ procedures: [{ part: "ending", name: "Ends short", passages: [4] }] }),
+        sentences,
+      )!.procedures,
+    ).toEqual([{ name: "Ends short", part: "ending", passages: ["Io dormivo."] }]);
+    expect(readProceduresAnswer("Lo stile è sobrio.", sentences)).toBeNull();
+  });
+
+  test("a passage is found in the pieces with the sentences around it; one gone is left out", () => {
+    const found = locatePassages(
+      style,
+      { passages: ["poi  mangiava", "Una frase che non c’è."] },
+      sentences,
+    );
+    expect(found).toEqual([
+      {
+        piece: 0,
+        pieceTitle: "Uno",
+        para: 1,
+        before: expect.stringMatching(/^Mio padre tornava/),
+        passage: "Poi mangiava.",
+        after: expect.stringMatching(/^Ma la luce restava accesa/),
+      },
+    ]);
+  });
+
+  test("a new reading: proposed procedures replaced, kept and set aside stay; old sentences go", () => {
+    const merged = mergeRead(
+      {
+        traits: [
+          { text: "Vecchia sintesi.", dim: "summary" },
+          { text: "Frasi lunghe.", dim: "rhythm", state: "fixed" },
+          { text: "Mie note.", state: "fixed" },
+        ],
+        procedures: [
+          { name: "Apre su un oggetto", state: "fixed" },
+          { name: "Tono malinconico", state: "off" },
+          { name: "Proposto prima", passages: ["Poi mangiava."] },
+        ],
+      },
+      {
+        summary: "Nuova sintesi.",
+        procedures: [
+          { name: "tono malinconico", passages: ["Io dormivo."] },
+          { name: "Chiude breve", part: "paragraph", passages: ["Io dormivo."] },
+        ],
+      },
+    );
+    expect(merged.traits).toEqual([
+      { text: "Mie note.", state: "fixed" },
+      { text: "Nuova sintesi.", dim: "summary" },
+    ]);
+    expect(proceduresForFile(merged.procedures)).toEqual([
+      { name: "Apre su un oggetto", state: "fixed" },
+      { name: "Tono malinconico", state: "off" },
+      { name: "Chiude breve", part: "paragraph", passages: ["Io dormivo."] },
+    ]);
+  });
+
+  test("a style file keeps its procedures; the library shows where one happens", () => {
+    const text = MOVING_STYLE.replace(
+      "lang: it\n",
+      "lang: it\nprocedures:\n  - name: Chiude breve\n    part: paragraph\n    passages: [Io dormivo.]\n  - name: Altro\n    part: nonsense\n",
+    );
+    const s = readStyle(text);
+    expect(s.procedures).toEqual([
+      { name: "Chiude breve", part: "paragraph", passages: ["Io dormivo."] },
+    ]);
+    expect(styleQuote(s)).toBe("Io dormivo.");
+  });
+});
+
+describe("the editor reads the draft beside the style", () => {
+  const it = builtinPack("it");
+  const style = {
+    ...readStyle(MOVING_STYLE),
+    traits: [{ text: "Memoria.", dim: "summary" as const }],
+    procedures: [
+      { name: "Entra da una cosa", part: "opening" as const, text: "Apre su un oggetto." },
+      { name: "Tono malinconico", state: "off" as const },
+      { name: "Chiude breve", part: "paragraph" as const },
+    ],
+  };
+
+  test("the model reads the whole draft and the procedures, never the pieces", () => {
+    const m = styleReadingMessages(it, style, MARKET)!;
+    expect(m[0]!.content).toContain('"esito"');
+    expect(m[1]!.content).toContain("In brief: Memoria.");
+    expect(m[1]!.content).toContain("1. [opening] Entra da una cosa — Apre su un oggetto.");
+    expect(m[1]!.content).toContain("2. [paragraph] Chiude breve");
+    expect(m[1]!.content).not.toContain("Tono malinconico");
+    expect(m[1]!.content).toContain("DRAFT: ");
+    expect(m[1]!.content).toMatch(
+      /^¶3 <<<Ettore teneva le zucchine.*palmo della mano aperta\.>>>$/m,
+    );
+    expect(m[1]!.content).not.toContain("Mio padre tornava la sera");
+    const bare = { ...it, prompts: { ...it.prompts, "style-reading": undefined } };
+    expect(styleReadingMessages(bare, style, MARKET)).toBeNull();
+  });
+
+  test("functions by paragraph; cues on real procedures and paragraphs, in the order of the text", () => {
+    const sent = [style.procedures[0]!, style.procedures[2]!];
+    const r = readReadingAnswer(
       JSON.stringify({
-        sintesi: "Somiglia nella voce.",
+        sintesi: "Il finale è già dello stile.",
+        paragrafi: [
+          { numero: 1, funzione: "Attacco" },
+          { numero: "3", funzione: "scena" },
+          { numero: 9, funzione: "x" },
+        ],
         spunti: [
-          { numero: 1, nota: "Troppi avverbi." },
-          { numero: "2", nota: "Ritmo piatto." },
-          { numero: 99, nota: "x" },
+          { procedimento: 2, paragrafo: 4, esito: "come", nota: "Chiude breve.", parole: [] },
+          {
+            procedimento: 1,
+            paragrafo: 1,
+            esito: "diverso",
+            nota: "Dichiara il tema.",
+            parole: ["mio padre", "x".repeat(200)],
+          },
+          { procedimento: 2, paragrafo: 0, esito: "assente", nota: "Manca." },
+          { procedimento: 7, paragrafo: 1, nota: "Nessuno." },
+          { procedimento: 1, paragrafo: 12, nota: "Fuori." },
+          { procedimento: 1, paragrafo: 1, nota: "Doppio." },
+          { procedimento: 1, paragrafo: 2, esito: "like", nota: "Anche qui." },
+          { procedimento: 1, paragrafo: 3, esito: "like", nota: "Troppo." },
         ],
       }),
-      ids,
+      sent,
+      4,
     );
-    expect(r).toEqual({
-      summary: "Somiglia nella voce.",
-      notes: { [ids[0]!]: "Troppi avverbi.", [ids[1]!]: "Ritmo piatto." },
-    });
-    expect(readNoteAnswer("La bozza va bene.", ids)).toBeNull();
+    expect(r!.summary).toBe("Il finale è già dello stile.");
+    expect(r!.functions).toEqual(["attacco", "", "scena", ""]);
+    expect(r!.cues.map((c) => [c.procedure.name, c.paragraph, c.outcome, c.note, c.words])).toEqual(
+      [
+        ["Entra da una cosa", 1, "differs", "Dichiara il tema.", ["mio padre"]],
+        // At most two where the draft is like the style.
+        ["Entra da una cosa", 2, "like", "Anche qui.", []],
+        ["Chiude breve", 4, "like", "Chiude breve.", []],
+        ["Chiude breve", null, "missing", "Manca.", []],
+      ],
+    );
+    expect(r!.cues[0]!.procedure.part).toBe("opening");
+    expect(readReadingAnswer("La bozza va bene.", sent, 4)).toBeNull();
   });
 });

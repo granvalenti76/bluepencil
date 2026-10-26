@@ -221,47 +221,114 @@ export const scriptedChat: ChatHandler = (body) => {
       "Mi presento in poche parole.",
     );
   }
-  // The editor's note on a draft beside a style: a note for every numbered cue.
-  if (system.includes('"nota"')) {
+  // The editor's reading of a draft beside a style: what each paragraph does, and a cue on the
+  // opening, on the ending and on the whole draft.
+  if (system.includes('"esito"')) {
     const it = system.includes("Scrivi in italiano");
-    const cues = [...user.matchAll(/^(\d+)\. \[([^\]·]+)·([^\]]+)\]/gm)];
+    const procs = [...user.matchAll(/^(\d+)\. \[[^\]]*\] /gm)].length;
+    const paras = [...user.matchAll(/^¶(\d+) <<<(.*)>>>$/gm)];
+    const last = paras.length;
+    const first = paras[0]?.[2]?.split(/\s+/).slice(0, 3).join(" ") ?? "";
+    const fn = (n: number) =>
+      n === 1
+        ? it
+          ? "attacco"
+          : "opening"
+        : n === last
+          ? it
+            ? "finale"
+            : "ending"
+          : it
+            ? "scena"
+            : "scene";
+    const cues = [
+      {
+        procedimento: 1,
+        paragrafo: 1,
+        esito: "diverso",
+        nota: it
+          ? `L'attacco dice subito di che cosa parla il pezzo; lo stile entra da una cosa e lascia arrivare il tema dopo.`
+          : "The opening says at once what the piece is about; the style opens on a thing and lets the subject come later.",
+        parole: first ? [first] : [],
+      },
+      ...(procs >= 2 && last > 1
+        ? [
+            {
+              procedimento: 2,
+              paragrafo: last,
+              esito: "come",
+              nota: it
+                ? "Il paragrafo si chiude su una frase breve, come negli spezzoni."
+                : "The paragraph closes on a short sentence, as in the pieces.",
+              parole: [],
+            },
+          ]
+        : []),
+      ...(procs >= 3
+        ? [
+            {
+              procedimento: 3,
+              paragrafo: 0,
+              esito: "assente",
+              nota: it
+                ? "Nella bozza tutto è un'abitudine: non c'è ancora la volta che andò diversamente."
+                : "In the draft everything is a habit: there is not yet the time it went otherwise.",
+              parole: [],
+            },
+          ]
+        : []),
+    ];
     return replyWith(
       JSON.stringify({
         sintesi: it
-          ? "La bozza somiglia allo stile nella voce, se ne allontana nel ritmo e nel lessico."
-          : "The draft is like the style in its voice, and moves away in rhythm and vocabulary.",
-        spunti: cues.map((c) => ({
-          numero: Number(c[1]),
-          nota: it
-            ? `Qui (${c[3]!.trim()}) lo stile fa diversamente: ${c[2]!.trim().toLowerCase()} più vario, e chi legge sente il respiro.`
-            : `Here (${c[3]!.trim()}) the style works differently: a livelier ${c[2]!.trim().toLowerCase()}, and the reader feels the breath.`,
-        })),
+          ? "Il finale è già quello dello stile; l'attacco invece dichiara il tema."
+          : "The ending is already the style's; the opening states the subject instead.",
+        paragrafi: paras.map((p) => ({ numero: Number(p[1]), funzione: fn(Number(p[1])) })),
+        spunti: cues,
       }),
       "Leggo la bozza accanto allo stile.",
     );
   }
-  // A style's schema into words, before the outline (the prompts open the same way).
-  if (system.includes('"ritmo"')) {
+  // A style's procedures, read in its numbered pieces, before the outline (the prompts open the
+  // same way).
+  if (system.includes('"procedimenti"')) {
     const it = system.includes("Scrivi in italiano");
+    const ids = [...user.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
+    const max = Math.max(1, ...ids);
+    const at = (...n: number[]) => [...new Set(n.map((x) => Math.min(x, max)))];
     return replyWith(
-      JSON.stringify(
-        it
-          ? {
-              sintesi: "Prosa breve e asciutta, con frasi corte e un lessico semplice.",
-              ritmo: "Frasi corte e regolari, paragrafi brevi.",
-              lessico: "Parole comuni, poche ripetizioni, pochi avverbi.",
-              costruzione: "Poche virgole, quasi nessuna subordinata.",
-              voce: "Terza persona, nessun dialogo.",
-            }
-          : {
-              sintesi: "Short, dry prose with short sentences and plain words.",
-              ritmo: "Short, even sentences; short paragraphs.",
-              lessico: "Common words, few repetitions, few adverbs.",
-              costruzione: "Few commas, hardly any subordinate clauses.",
-              voce: "Third person, no dialogue.",
-            },
-      ),
-      "Leggo lo schema.",
+      JSON.stringify({
+        sintesi: it
+          ? "Prosa breve e asciutta: frasi corte, un dettaglio concreto in apertura."
+          : "Short, dry prose: short sentences, a concrete detail to open.",
+        procedimenti: [
+          {
+            parte: it ? "attacco" : "opening",
+            nome: it ? "Entra da una cosa, non da un tema" : "Opens on a thing, not on a subject",
+            descrizione: it
+              ? "La prima frase mette davanti un fatto o un oggetto preciso."
+              : "The first sentence puts a precise fact or object in front.",
+            passi: at(1),
+          },
+          {
+            parte: it ? "paragrafo" : "paragraph",
+            nome: it ? "Chiude su una frase breve" : "Closes on a short sentence",
+            descrizione: it
+              ? "Il paragrafo si ferma su una frase di poche parole."
+              : "The paragraph stops on a sentence of a few words.",
+            passi: at(2, 3),
+          },
+          {
+            parte: it ? "tempo" : "time",
+            nome: it ? "Ore e minuti esatti" : "Exact hours and minutes",
+            descrizione: it
+              ? "Il tempo si dice con l'orario, non con gli aggettivi."
+              : "Time is told by the clock, not with adjectives.",
+            passi: at(1, 3),
+          },
+        ],
+      }),
+      "Leggo gli spezzoni.",
     );
   }
   if (system.includes("caporedattore")) {

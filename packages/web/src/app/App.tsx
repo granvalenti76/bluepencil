@@ -278,7 +278,7 @@ export function App() {
   const inStyle = mode === "style";
   const inWrite = mode === "write";
   const styleCues = useUi((s) => s.styleCues);
-  // A style file: its schema on the page, in place of the pieces.
+  // A style file: what it does on the page, in place of the pieces.
   const schemaShown = useStyles((s) => s.schemaOpen) && isStyle && !preview;
 
   if (!token) {

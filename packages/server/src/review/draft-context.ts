@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  activeProcedures,
   activeTraits,
   archetypeIn,
   isStylePath,
@@ -27,11 +28,18 @@ export async function readCommonStyle(draftsDir: string): Promise<string[]> {
     .filter((l) => l !== "" && !l.startsWith("#") && !l.startsWith("<!--"));
 }
 
-/** The traits of the style the draft looks at: style notes the review does not go against. */
+/**
+ * The style the draft looks at, in words: its summary and the author's own traits, then its
+ * procedures. Style notes the review does not go against.
+ */
 async function referenceTraits(repo: DraftsRepo, reference: string | undefined): Promise<string[]> {
   if (!reference || !isStylePath(reference)) return [];
   try {
-    return activeTraits(readStyle((await repo.read(reference)).text)).map((t) => t.text);
+    const style = readStyle((await repo.read(reference)).text);
+    return [
+      ...activeTraits(style).map((t) => t.text),
+      ...activeProcedures(style).map((p) => (p.text ? `${p.name}: ${p.text}` : p.name)),
+    ];
   } catch {
     return [];
   }

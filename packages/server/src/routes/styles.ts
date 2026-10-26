@@ -2,25 +2,27 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
+  activeProcedures,
   appendPiece,
-  compareWithStyle,
   DEFAULT_LANGUAGE,
   isModelError,
   isStylePath,
-  mergeTraits,
+  measureText,
+  mergeRead,
   newStyleText,
   parseDraft,
   patchFrontMatter,
+  pieceSentences,
+  proceduresForFile,
+  readProceduresAnswer,
+  readReadingAnswer,
   readStyle,
   repairMessage,
   STYLES_DIR,
   ModelError,
-  readNoteAnswer,
-  readTraitsAnswer,
-  styleNoteMessages,
-  styleSchema,
-  styleTraitsMessages,
+  styleProceduresMessages,
   styleQuote,
+  styleReadingMessages,
   styleSummary,
   traitsForFile,
   type ChatRequest,
@@ -44,8 +46,9 @@ export interface StyleSummary {
   tags: string[];
   pieces: number;
   words: number;
-  traits: number;
-  /** A first sentence, for the card: the start of a piece (or a trait's example). */
+  /** Procedures not set aside. */
+  procedures: number;
+  /** A first sentence, for the card: where a procedure happens, or the start of a piece. */
   quote: string;
   /** The model's summary of the style, unless set aside. */
   summary?: string;
@@ -69,22 +72,22 @@ const PieceBody = Piece.extend({
   path: z.string().min(1),
   text: z.string().trim().min(1).max(100_000),
 });
-/** `save`: write the traits into the file (when it is not open in the editor). */
-const TraitsBody = z.object({ path: z.string().min(1), save: z.boolean().optional() });
+/** `save`: write the reading into the file (when it is not open in the editor). */
+const ReadBody = z.object({ path: z.string().min(1), save: z.boolean().optional() });
 /** The draft's body as the editor has it now. */
-const NoteBody = z.object({ style: z.string().min(1), draft: z.string().max(400_000) });
+const ReadingBody = z.object({ style: z.string().min(1), draft: z.string().max(400_000) });
 
-/** Putting a style into words may take a while with reasoning on. */
-const MAX_TOKENS = 8192;
+/** Reading a style, or a draft beside it, may take a while with reasoning on. */
+const MAX_TOKENS = 12_288;
 
 /**
  * Styles: files in `Styles/` inside the drafts folder, opened and edited like drafts. Here the
  * library, a new style (labels and pasted pieces, written into the file by Bluepencil), a piece
- * added from a selection, and the two model calls: putting the style's schema into words, and
- * the editor's note on a draft beside the style (the schema and the comparison are measured by
- * the code; the model reads the numbers and the draft's paragraphs, never the style's pieces).
- * The traits are saved here when the style is not open; when it is, the page saves them in the
- * open file, so the editor and the file never disagree.
+ * added from a selection, and the two model calls: reading the style's procedures in its pieces
+ * (whole, every sentence numbered; a procedure keeps only the sentences found there), and the
+ * editor's reading of a draft beside the style, by function (the model reads the whole draft and
+ * the procedures, not the pieces). A style's reading is saved here when the style is not open;
+ * when it is, the page saves it in the open file, so the editor and the file never disagree.
  */
 export function registerStyleRoutes(
   app: FastifyInstance,
@@ -121,7 +124,7 @@ export function registerStyleRoutes(
           tags: s.tags,
           pieces: s.pieces.length,
           words: s.words,
-          traits: s.traits.filter((t) => t.state !== "off").length,
+          procedures: activeProcedures(s).length,
           quote: styleQuote(s),
           ...(summary ? { summary } : {}),
           usedIn: 0,
@@ -169,8 +172,8 @@ export function registerStyleRoutes(
     return { path, pieces: readStyle(file.text).pieces.length };
   });
 
-  app.post<{ Body: unknown }>("/api/styles/traits", async (req, reply) => {
-    const parsed = TraitsBody.safeParse(req.body);
+  app.post<{ Body: unknown }>("/api/styles/procedures", async (req, reply) => {
+    const parsed = ReadBody.safeParse(req.body);
     if (!parsed.success || !isStylePath(parsed.data.path)) {
       return reply.code(400).send({ error: "bad_request", message: "Not a style" });
     }
@@ -179,51 +182,58 @@ export function registerStyleRoutes(
       return reply.code(409).send({ error: "empty", message: "Add a piece to the style first" });
     }
     const pack = languages.forDraft(style.lang);
-    const messages = styleTraitsMessages(pack, style);
+    const sentences = pieceSentences(style, pack);
+    const messages = styleProceduresMessages(pack, style, sentences);
     if (!messages) return noPrompts(reply, pack.name);
     return ask(reply, async (signal) => {
-      const traits = await model.run(
+      const read = await model.run(
         (client) =>
           readAnswer(
             client,
             { messages, temperature: 0.4, maxTokens: MAX_TOKENS, signal },
-            readTraitsAnswer,
+            (content) => readProceduresAnswer(content, sentences),
             (error) => repairMessage(pack, error),
           ),
         { signal },
       );
-      if (!parsed.data.save) return { traits };
-      // Read again: the author may have added a trait while the model was reading.
+      if (!parsed.data.save) return read;
+      // Read again: the author may have kept or set aside a procedure while the model was reading.
       const now = await repo.read(parsed.data.path);
-      const merged = mergeTraits(readStyle(now.text).traits, traits);
-      const next = patchFrontMatter(now.text, { traits: traitsForFile(merged) });
+      const merged = mergeRead(readStyle(now.text), read);
+      const next = patchFrontMatter(now.text, {
+        traits: traitsForFile(merged.traits),
+        procedures: proceduresForFile(merged.procedures),
+      });
       const file = await repo.write(parsed.data.path, next, now.hash);
       watcher.noteSelfWrite(parsed.data.path, file.hash);
       index.upsert(parsed.data.path, file.text, file.mtimeMs);
-      return { traits: merged };
+      return { summary: read.summary, procedures: merged.procedures };
     });
   });
-  app.post<{ Body: unknown }>("/api/styles/note", async (req, reply) => {
-    const parsed = NoteBody.safeParse(req.body);
+
+  app.post<{ Body: unknown }>("/api/styles/reading", async (req, reply) => {
+    const parsed = ReadingBody.safeParse(req.body);
     if (!parsed.success || !isStylePath(parsed.data.style)) {
       return reply.code(400).send({ error: "bad_request", message: "Not a style" });
     }
     const style = readStyle((await repo.read(parsed.data.style)).text);
-    if (style.pieces.length === 0) {
-      return reply.code(409).send({ error: "empty", message: "The style has no pieces yet" });
+    const procedures = activeProcedures(style);
+    if (procedures.length === 0) {
+      return reply
+        .code(409)
+        .send({ error: "not_read", message: "The style’s procedures have not been read yet" });
     }
     const pack = languages.forDraft(style.lang);
-    const comparison = compareWithStyle(parsed.data.draft, styleSchema(style, pack), pack);
-    const messages = styleNoteMessages(pack, style, comparison, parsed.data.draft);
+    const messages = styleReadingMessages(pack, style, parsed.data.draft);
     if (!messages) return noPrompts(reply, pack.name);
-    const ids = comparison.cues.map((c) => c.id);
+    const paragraphs = measureText(parsed.data.draft, pack).paragraphs.length;
     return ask(reply, (signal) =>
       model.run(
         (client) =>
           readAnswer(
             client,
             { messages, temperature: 0.4, maxTokens: MAX_TOKENS, signal },
-            (content) => readNoteAnswer(content, ids),
+            (content) => readReadingAnswer(content, procedures, paragraphs),
             (error) => repairMessage(pack, error),
           ),
         { signal },
@@ -233,7 +243,7 @@ export function registerStyleRoutes(
 }
 
 /**
- * One request, read leniently (`readTraitsAnswer`, `readNoteAnswer`); if nothing at all can be
+ * One request, read leniently (`readProceduresAnswer`, `readReadingAnswer`); if nothing at all can be
  * read, the model is asked once to fix its answer, as for the outline.
  */
 async function readAnswer<T>(

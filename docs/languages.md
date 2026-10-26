@@ -25,7 +25,7 @@ words ignored when searching sources, the few words Bluepencil writes into a dra
     system.md  structure.md  structure-score.md  facts.md  grammar.md  prose.md
     prose-score.md  focus.md  outline.md  section.md  rewrite.md  repair.md
     letter.md      (optional: the editor's letter)
-    style-traits.md  style-note.md  (optional: styles)
+    style-procedures.md  style-reading.md  (optional: styles)
     labels.json  tools.json
   archetypes/
     article.json  blog.json  report.json  docs.json
@@ -98,13 +98,16 @@ whole text (what works, the main problem, what is left), shown at the top of the
 together with `letter` and `letterText` in `tools.json`: all three, or none. Without them the
 checks work as before, without a letter.
 
-`style-traits.md` is optional too. Bluepencil measures a style's schema itself (rhythm,
-vocabulary, construction, voice); this prompt asks the model to put the numbers into words, one
-sentence per dimension and a summary. The answer is JSON with fixed field names (`sintesi`,
-`ritmo`, `lessico`, `costruzione`, `voce`): copy the English file and translate the instructions,
-not the field names. Without it, styles still measure and compare, without the sentences.
-`style-note.md` asks the model for a note on each cue of a draft beside a style (`sintesi`,
-`spunti` with `numero` and `nota`); without it the cues keep the code's own wording.
+`style-procedures.md` and `style-reading.md` are optional too, and go together. The first asks the
+model to read a style's pieces, whole and with every sentence numbered, and name its procedures:
+the moves that come back (how a piece opens, how a paragraph closes, how people are shown…), each
+with the numbers of the sentences where it happens. The second asks for a reading of a draft
+beside the style: what each paragraph does, and a note where a procedure of the style is at stake.
+The answers are JSON with fixed field names (`sintesi`, `procedimenti` with `parte`, `nome`,
+`descrizione`, `passi`; `paragrafi` with `numero`, `funzione`, and `spunti` with `procedimento`,
+`paragrafo`, `esito`, `nota`, `parole`): copy the English files and translate the instructions,
+not the field names. `parte` and `esito` may be written in Italian or English. Without these
+prompts, styles still measure their pieces and the draft, without procedures.
 
 ### prompts/labels.json and prompts/tools.json
 
