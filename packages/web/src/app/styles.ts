@@ -1,15 +1,32 @@
 import { create } from "zustand";
-import { mergeTraits, readStyle, traitsForFile, type StyleTip, type TraitCheck } from "@desk/core";
+import {
+  mergeTraits,
+  readStyle,
+  traitsForFile,
+  type Style,
+  type StyleComparison,
+  type StyleSchema,
+} from "@desk/core";
 import { api, errorMessage, type NewStyle, type StyleSummary } from "./api.ts";
 import { useDoc } from "./docStore.ts";
 import { session } from "./session.ts";
 
 /**
  * Styles, the process around them. A style is made in one go (the "New style" window: labels and
- * pasted pieces) or grows from the author's reading ("To a style" on a selection). Every time its
- * pieces change, the model reads its traits again, in the background, keeping those the author
- * fixed or set aside. A draft looks at one style ("Look at"); Style mode sets it beside the draft.
+ * pasted pieces) or grows from the author's reading ("To a style" on a selection). Its schema is
+ * measured in the page; every time its pieces change, the model puts it into words again, in the
+ * background, keeping the sentences the author kept or set aside. A draft looks at one style
+ * ("Look at"); the comparison follows the text as it changes, and Style mode sets it beside it.
  */
+
+/** The open draft beside the style it looks at: measured again as the text changes. */
+export interface Looking {
+  draft: string;
+  reference: string;
+  style: Style;
+  schema: StyleSchema;
+  comparison: StyleComparison;
+}
 
 /** The window open: a new style (maybe from a selection), or a selection to add to a style. */
 export type StyleDialog =
@@ -21,14 +38,15 @@ interface StylesState {
   list: StyleSummary[];
   libraryOpen: boolean;
   dialog: StyleDialog | null;
-  /** Styles whose traits the model is reading now, in the background. */
+  /** Styles the model is putting into words now, in the background. */
   reading: string[];
-  /** The cues for the open draft are being looked for. */
-  busy: boolean;
   error: string | null;
-  /** The last cues and trait checks, per draft, with the text and the style they were found on. */
-  tips: Record<string, { tips: StyleTip[]; checks: TraitCheck[]; bodyHash: string; style: string }>;
-  /** Cues set aside ("Not for this text") while the page stays open. */
+  looking: Looking | null;
+  /** The style the open draft looks at is gone. */
+  missing: string | null;
+  /** A cue's number clicked on the page: its card is shown. */
+  focusCue: number | null;
+  /** Cues set aside ("Not for this text") while the page stays open, by cue id, per draft. */
   hidden: Record<string, string[]>;
 }
 
@@ -38,13 +56,12 @@ export const useStyles = create<StylesState>()(() => ({
   libraryOpen: false,
   dialog: null,
   reading: [],
-  busy: false,
   error: null,
-  tips: {},
+  looking: null,
+  missing: null,
+  focusCue: null,
   hidden: {},
 }));
-
-let tipsController: AbortController | null = null;
 
 /** Opens a file like the drafts list does: in the address too. */
 function openPath(path: string) {
@@ -130,8 +147,9 @@ export const styles = {
   },
 
   /**
-   * The model reads a style's traits. A style not open in the editor: the server writes them into
-   * the file. The open one: they go through the editor, so the page and the file agree.
+   * The model puts a style's schema into words. A style not open in the editor: the server writes
+   * the sentences into the file. The open one: they go through the editor, so the page and the
+   * file agree.
    */
   async readTraits(path: string) {
     if (useStyles.getState().reading.includes(path)) return;
@@ -149,39 +167,16 @@ export const styles = {
         }
       }
     } catch (e) {
-      fail(e, "The model couldn’t read the traits");
+      fail(e, "The model couldn’t describe the style");
     } finally {
       useStyles.setState((s) => ({ reading: s.reading.filter((p) => p !== path) }));
       void styles.load();
     }
   },
 
-  async findTips(draft: string, style: string, body: string, bodyHash: string) {
-    tipsController?.abort();
-    const mine = new AbortController();
-    tipsController = mine;
-    useStyles.setState({ busy: true, error: null });
-    try {
-      const { tips, checks } = await api.styleTips(style, body, mine.signal);
-      useStyles.setState((s) => ({
-        tips: { ...s.tips, [draft]: { tips, checks, bodyHash, style } },
-        hidden: { ...s.hidden, [draft]: [] },
-      }));
-    } catch (e) {
-      if (!mine.signal.aborted) fail(e, "The model couldn’t answer");
-    } finally {
-      if (tipsController === mine) {
-        tipsController = null;
-        useStyles.setState({ busy: false });
-      }
-    }
-  },
-  cancelTips() {
-    tipsController?.abort();
-  },
-  hide(draft: string, quote: string) {
+  hide(draft: string, cue: string) {
     useStyles.setState((s) => ({
-      hidden: { ...s.hidden, [draft]: [...(s.hidden[draft] ?? []), quote] },
+      hidden: { ...s.hidden, [draft]: [...(s.hidden[draft] ?? []), cue] },
     }));
   },
 };

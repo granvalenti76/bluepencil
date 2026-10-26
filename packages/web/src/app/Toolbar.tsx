@@ -182,13 +182,18 @@ function Authorship({ view }: { view: EditorView | null }) {
 }
 
 /**
- * View: preview, focus, Hemingway; in Write the author's hand; typing sounds. Toggles, with their
- * state in `aria-pressed`.
+ * View: preview, focus, Hemingway; in Write the author's hand and, for a draft that looks at a
+ * style, its cues on the page; typing sounds. Toggles, with their state in `aria-pressed`.
  */
 function ViewMenu() {
   const ui = useUi();
-  const write = ui.mode === "write";
-  const any = ui.preview || ui.focus || ui.hemingway || (write && ui.handwriting);
+  const write = useMode() === "write";
+  const looksAt = useDoc((s) => s.reference !== null && !isStylePath(s.path ?? ""));
+  const any =
+    ui.preview ||
+    ui.focus ||
+    ui.hemingway ||
+    (write && (ui.handwriting || (looksAt && ui.styleCues)));
   const toggles: [string, string, boolean, () => void, string][] = [
     ["Preview", "The text as the reader sees it · ⇧⌘P", ui.preview, ui.togglePreview, "⇧⌘P"],
     ["Focus", "Dims the rest and keeps the line centered", ui.focus, () => ui.toggle("focus"), ""],
@@ -200,6 +205,17 @@ function ViewMenu() {
             "Your text in your own hand, as you sign it",
             ui.handwriting,
             () => ui.togglePref("handwriting"),
+            "",
+          ],
+        ] as [string, string, boolean, () => void, string][])
+      : []),
+    ...(write && looksAt
+      ? ([
+          [
+            "Style cues",
+            "The style’s cues numbered on the page while you write; a click on a number opens it",
+            ui.styleCues,
+            () => ui.togglePref("styleCues"),
             "",
           ],
         ] as [string, string, boolean, () => void, string][])
@@ -216,7 +232,7 @@ function ViewMenu() {
     <MenuButton
       icon={<EyeIcon />}
       label="View"
-      tip="View: preview, focus, handwriting, sounds"
+      tip="View: preview, focus, handwriting, style cues, sounds"
       active={any}
     >
       {() =>

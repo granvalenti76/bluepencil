@@ -2,7 +2,6 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
-  activeTraits,
   appendPiece,
   DEFAULT_LANGUAGE,
   isModelError,
@@ -15,11 +14,10 @@ import {
   repairMessage,
   STYLES_DIR,
   ModelError,
-  readTipsAnswer,
   readTraitsAnswer,
-  styleTipsMessages,
   styleTraitsMessages,
   styleQuote,
+  styleSummary,
   traitsForFile,
   type ChatRequest,
   type ModelClient,
@@ -43,8 +41,10 @@ export interface StyleSummary {
   pieces: number;
   words: number;
   traits: number;
-  /** A first sentence, for the card: a trait's example or the start of a piece. */
+  /** A first sentence, for the card: the start of a piece (or a trait's example). */
   quote: string;
+  /** The model's summary of the style, unless set aside. */
+  summary?: string;
   /** How many drafts look at it. */
   usedIn: number;
 }
@@ -67,15 +67,15 @@ const PieceBody = Piece.extend({
 });
 /** `save`: write the traits into the file (when it is not open in the editor). */
 const TraitsBody = z.object({ path: z.string().min(1), save: z.boolean().optional() });
-const TipsBody = z.object({ style: z.string().min(1), draft: z.string().max(400_000) });
 
-/** Reading a style or a draft against it may take a while with reasoning on. */
+/** Putting a style into words may take a while with reasoning on. */
 const MAX_TOKENS = 8192;
 
 /**
  * Styles: files in `Styles/` inside the drafts folder, opened and edited like drafts. Here the
  * library, a new style (labels and pasted pieces, written into the file by Bluepencil), a piece
- * added from a selection, and the two model calls: reading a style's traits and cues for a draft.
+ * added from a selection, and the model call that puts the style's schema into words (the schema
+ * and the comparison with a draft are measured by the code, in the page).
  * The traits are saved here when the style is not open; when it is, the page saves them in the
  * open file, so the editor and the file never disagree.
  */
@@ -104,6 +104,7 @@ export function registerStyleRoutes(
       }
       if (isStylePath(path)) {
         const s = readStyle(text);
+        const summary = styleSummary(s);
         styles.push({
           path,
           name: s.name,
@@ -115,6 +116,7 @@ export function registerStyleRoutes(
           words: s.words,
           traits: s.traits.filter((t) => t.state !== "off").length,
           quote: styleQuote(s),
+          ...(summary ? { summary } : {}),
           usedIn: 0,
         });
       } else {
@@ -196,36 +198,10 @@ export function registerStyleRoutes(
       return { traits: merged };
     });
   });
-
-  app.post<{ Body: unknown }>("/api/styles/tips", async (req, reply) => {
-    const parsed = TipsBody.safeParse(req.body);
-    if (!parsed.success || !isStylePath(parsed.data.style)) {
-      return reply.code(400).send({ error: "bad_request", message: "Not a style" });
-    }
-    const style = readStyle((await repo.read(parsed.data.style)).text);
-    if (style.pieces.length === 0) {
-      return reply.code(409).send({ error: "empty", message: "The style has no pieces yet" });
-    }
-    const pack = languages.forDraft(style.lang);
-    const messages = styleTipsMessages(pack, style, parsed.data.draft);
-    if (!messages) return noPrompts(reply, pack.name);
-    return ask(reply, async (signal) => {
-      return model.run(
-        (client) =>
-          readAnswer(
-            client,
-            { messages, temperature: 0.4, maxTokens: MAX_TOKENS, signal },
-            (content) => readTipsAnswer(content, activeTraits(style)),
-            (error) => repairMessage(pack, error),
-          ),
-        { signal },
-      );
-    });
-  });
 }
 
 /**
- * One request, read leniently (`readTraitsAnswer`, `readTipsAnswer`); if nothing at all can be
+ * One request, read leniently (`readTraitsAnswer`); if nothing at all can be
  * read, the model is asked once to fix its answer, as for the outline.
  */
 async function readAnswer<T>(

@@ -31,3 +31,4 @@ export * from "./publish/export.ts";
 export * from "./eval/score.ts";
 export * from "./style/measures.ts";
 export * from "./style/style.ts";
+export * from "./style/compare.ts";

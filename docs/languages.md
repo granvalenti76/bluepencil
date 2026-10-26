@@ -25,7 +25,7 @@ words ignored when searching sources, the few words Bluepencil writes into a dra
     system.md  structure.md  structure-score.md  facts.md  grammar.md  prose.md
     prose-score.md  focus.md  outline.md  section.md  rewrite.md  repair.md
     letter.md      (optional: the editor's letter)
-    style-traits.md  style-tips.md   (optional: styles)
+    style-traits.md  (optional: styles)
     labels.json  tools.json
   archetypes/
     article.json  blog.json  report.json  docs.json
@@ -37,19 +37,20 @@ Hidden files (`.DS_Store`) are ignored. Symbolic links are not allowed.
 
 ### language.json
 
-| Field              | What it is                                                                                                                                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `code`             | The language code, BCP 47 (`es`, `pt-BR`, `it-x-mine`). It must match the folder name.                                                                                                                          |
-| `name`             | The name of the language, in the language itself (`Español`). Shown in the language menu.                                                                                                                       |
-| `promptVersions`   | One version per prompt (`system`, `structure`, `facts`, `grammar`, `prose`). For your own pack you don't need to bump them: any change to a file already invalidates the cached checks in this language.        |
-| `readability`      | The readability formula (see below).                                                                                                                                                                            |
-| `wordsPerMinute`   | Reading speed for the reading time (230 is a common value).                                                                                                                                                     |
-| `opinionNote`      | The footnote Bluepencil writes for **Mark as opinion** (`Author's assessment.`).                                                                                                                                |
-| `untitledSlug`     | File name for a draft whose title has no Latin letters (`draft`). Lowercase letters, digits, dashes.                                                                                                            |
-| `capitalizedNames` | `true` if a capitalized word suggests a proper name. Set `false` for German, where all nouns are capitalized.                                                                                                   |
-| `stopWords`        | Common words to ignore when searching the sources for facts.                                                                                                                                                    |
-| `commonWords`      | The 30–40 most frequent words of the language (articles, prepositions, conjunctions). Bluepencil counts them to recognize the language of a draft and offer to switch. Avoid words shared with other languages. |
-| `intensifiers`     | Optional. Intensifying adverbs (`really`, `completely`): Bluepencil counts them across drafts as a writing habit. Without it, that habit is not shown.                                                          |
+| Field              | What it is                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`             | The language code, BCP 47 (`es`, `pt-BR`, `it-x-mine`). It must match the folder name.                                                                                                                                                                                                                                                                          |
+| `name`             | The name of the language, in the language itself (`Español`). Shown in the language menu.                                                                                                                                                                                                                                                                       |
+| `promptVersions`   | One version per prompt (`system`, `structure`, `facts`, `grammar`, `prose`). For your own pack you don't need to bump them: any change to a file already invalidates the cached checks in this language.                                                                                                                                                        |
+| `readability`      | The readability formula (see below).                                                                                                                                                                                                                                                                                                                            |
+| `wordsPerMinute`   | Reading speed for the reading time (230 is a common value).                                                                                                                                                                                                                                                                                                     |
+| `opinionNote`      | The footnote Bluepencil writes for **Mark as opinion** (`Author's assessment.`).                                                                                                                                                                                                                                                                                |
+| `untitledSlug`     | File name for a draft whose title has no Latin letters (`draft`). Lowercase letters, digits, dashes.                                                                                                                                                                                                                                                            |
+| `capitalizedNames` | `true` if a capitalized word suggests a proper name. Set `false` for German, where all nouns are capitalized.                                                                                                                                                                                                                                                   |
+| `stopWords`        | Common words to ignore when searching the sources for facts.                                                                                                                                                                                                                                                                                                    |
+| `commonWords`      | The 30–40 most frequent words of the language (articles, prepositions, conjunctions). Bluepencil counts them to recognize the language of a draft and offer to switch. Avoid words shared with other languages.                                                                                                                                                 |
+| `intensifiers`     | Optional. Intensifying adverbs (`really`, `completely`): Bluepencil counts them across drafts as a writing habit. Without it, that habit is not shown.                                                                                                                                                                                                          |
+| `style`            | Optional. The words a style's schema needs, all optional: `adverbs` (`suffix` such as `ly`, and `except`), `connectives` (most common first), `subordinators`, `firstPerson`, `openers` (`conjunction`, `setting`, `subject`: the first words of a sentence) and up to three `tenses` (`label`, `endings`, `except`). Without a list, that measure is left out. |
 
 ### Readability
 
@@ -97,11 +98,11 @@ whole text (what works, the main problem, what is left), shown at the top of the
 together with `letter` and `letterText` in `tools.json`: all three, or none. Without them the
 checks work as before, without a letter.
 
-`style-traits.md` and `style-tips.md` are optional too. The first asks the model for the traits of
-a style (from its pieces), the second for the cues on a draft that looks at a style, and for each
-trait whether the draft follows it. The answers are JSON with fixed field names (`tratti`,
-`spunti`): copy the English files and translate the instructions, not the field names. Without
-them, styles still measure the draft, but the model reads no traits and finds no cues.
+`style-traits.md` is optional too. Bluepencil measures a style's schema itself (rhythm,
+vocabulary, construction, voice); this prompt asks the model to put the numbers into words, one
+sentence per dimension and a summary. The answer is JSON with fixed field names (`sintesi`,
+`ritmo`, `lessico`, `costruzione`, `voce`): copy the English file and translate the instructions,
+not the field names. Without it, styles still measure and compare, without the sentences.
 
 ### prompts/labels.json and prompts/tools.json
 

@@ -8,9 +8,7 @@ import type {
   PassState,
   ScoreKind,
   SectionInfo,
-  StyleTip,
   StyleTrait,
-  TraitCheck,
 } from "@desk/core";
 
 /** The token arrives in the fragment (`#t=…`): it is saved in sessionStorage and removed from the address. */
@@ -158,6 +156,8 @@ export interface StyleSummary {
   words: number;
   traits: number;
   quote: string;
+  /** The model's summary of the style. */
+  summary?: string;
   usedIn: number;
 }
 
@@ -272,13 +272,6 @@ export const api = {
     request<{ path: string; pieces: number }>("POST", "/api/styles/piece", { path, text, title }),
   readStyleTraits: (path: string, save: boolean, signal?: AbortSignal) =>
     request<{ traits: StyleTrait[] }>("POST", "/api/styles/traits", { path, save }, signal),
-  styleTips: (style: string, draft: string, signal?: AbortSignal) =>
-    request<{ tips: StyleTip[]; checks: TraitCheck[] }>(
-      "POST",
-      "/api/styles/tips",
-      { style, draft },
-      signal,
-    ),
   listDrafts: async () => (await request<{ drafts: DraftRow[] }>("GET", "/api/drafts")).drafts,
   getDraft: (path: string) => request<DraftDetail>("GET", `/api/drafts/${enc(path)}`),
   /** "Clear suggestions": removes all the draft's notes (the text does not change). */

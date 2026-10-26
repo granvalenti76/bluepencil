@@ -77,7 +77,11 @@ function StyleLibrary() {
               <span className="style-small">
                 {[s.author, s.source].filter(Boolean).join(" · ") || "No author or source yet"}
               </span>
-              {s.quote && <span className="library-card-quote">«{s.quote}»</span>}
+              {s.summary ? (
+                <span className="library-card-quote library-card-summary">{s.summary}</span>
+              ) : (
+                s.quote && <span className="library-card-quote">«{s.quote}»</span>
+              )}
               {s.tags.length > 0 && (
                 <span className="library-tags">
                   {s.tags.map((t) => (
@@ -94,7 +98,7 @@ function StyleLibrary() {
                 </span>
                 <span>
                   {reading.includes(s.path)
-                    ? "reading the traits…"
+                    ? "reading the schema…"
                     : s.usedIn
                       ? `in ${s.usedIn} ${s.usedIn === 1 ? "draft" : "drafts"}`
                       : "not used yet"}
@@ -126,7 +130,7 @@ interface PieceDraft {
 
 /**
  * The "New style" window: the labels, then the pieces pasted one by one, each with where it comes
- * from. Bluepencil writes the file; the model reads the traits right after.
+ * from. Bluepencil writes the file; the model puts its schema into words right after.
  */
 function NewStyleDialog({ dialog }: { dialog: Extract<StyleDialog, { kind: "new" }> }) {
   const draftLang = useDoc((s) => s.lang.code);
@@ -275,7 +279,7 @@ function NewStyleDialog({ dialog }: { dialog: Extract<StyleDialog, { kind: "new"
                   : words > STYLE_MAX_WORDS
                     ? `Over ${STYLE_MAX_WORDS.toLocaleString()} words a small model may not hold it all. `
                     : ""
-              }The model reads its traits right after.`}
+              }The model puts its schema into words right after.`}
           {dialog.lookAt && " The draft will look at it."}
         </p>
         {error && <p className="modal-error">{error}</p>}

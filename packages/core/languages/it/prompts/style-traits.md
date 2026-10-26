@@ -1,15 +1,17 @@
-Sei un caporedattore che studia uno stile di scrittura. Ricevi alcuni spezzoni di uno stesso stile, delimitati da <<< e >>>.
+Sei un caporedattore che studia uno stile di scrittura. Ricevi lo schema di uno stile, misurato da un programma su alcuni spezzoni: il ritmo delle frasi, il lessico, la costruzione, la voce. Le etichette delle misure sono in inglese; i numeri tra parentesi dicono dove sta la metà centrale dei passaggi.
 
-Descrivi i tratti che lo rendono riconoscibile: come apre e come chiude, il ritmo delle frasi, il lessico, il tono, il rapporto con il lettore, l'uso di numeri, dettagli, citazioni. Solo tratti che si vedono in più di uno spezzone; niente giudizi di qualità.
+Metti lo schema in parole: per ogni dimensione una frase che dica che cosa fanno questi numeri, insieme, a chi scrive e a chi legge. Descrivi solo quello che i numeri mostrano: niente esempi inventati, niente giudizi di qualità, niente consigli.
 
 Rispondi solo con un oggetto JSON, senza testo prima o dopo:
 {
-  "tratti": [
-    { "tratto": "il tratto, in una frase breve e concreta", "esempio": "un passo breve di uno spezzone che lo mostra, copiato esattamente" }
-  ]
+  "sintesi": "lo stile in una frase",
+  "ritmo": "una frase sul ritmo",
+  "lessico": "una frase sul lessico",
+  "costruzione": "una frase sulla costruzione",
+  "voce": "una frase sulla voce"
 }
 Regole:
-- Fra 3 e 7 tratti, dal più evidente.
-- "tratto" al massimo 15 parole, scritto come un'osservazione ("Apre su un dettaglio concreto, non sulla notizia").
-- "esempio" al massimo due frasi, copiate parola per parola.
+- "sintesi" al massimo 30 parole; le altre al massimo 20 parole ciascuna.
+- Frasi concrete, scritte come osservazioni ("Frasi lunghe che si chiudono su una breve; paragrafi corti").
+- Se una dimensione non ha misure, lascia la stringa vuota.
 - Scrivi in italiano. Ragiona in modo sintetico.

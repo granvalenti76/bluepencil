@@ -50,9 +50,9 @@ import { HelpDialog } from "./HelpDialog.tsx";
 import { NewDraftDialog } from "./NewDraftDialog.tsx";
 import { PublishDialog } from "./PublishDialog.tsx";
 import { SettingsDialog } from "./SettingsDialog.tsx";
-import { StylePanel } from "./StylePanel.tsx";
+import { StyleCues, StylePanel } from "./StylePanel.tsx";
 import { StyleOverlays } from "./StyleLibrary.tsx";
-import { styles } from "./styles.ts";
+import { styles, useStyles } from "./styles.ts";
 import { useMode } from "./mode.ts";
 import { cueMarks } from "../editor/cueMarks.ts";
 
@@ -234,7 +234,11 @@ export function App() {
         onStyle:
           doc.path && !isStylePath(doc.path) ? (text) => styles.addSelection(text) : undefined,
       }),
-      cueMarks(),
+      // A cue's number on the page, in Write too: Style mode, with its card.
+      cueMarks((n) => {
+        useUi.getState().setMode("style");
+        useStyles.setState({ focusCue: n });
+      }),
       askBox((host) => useAsk.setState({ host })),
       statusListener(
         (changes) => persistStatusChanges(changes, doc.bodyOffset),
@@ -272,6 +276,7 @@ export function App() {
   const inReview = mode === "review";
   const inStyle = mode === "style";
   const inWrite = mode === "write";
+  const styleCues = useUi((s) => s.styleCues);
 
   if (!token) {
     return (
@@ -286,7 +291,13 @@ export function App() {
   }
 
   return (
-    <div className="shell" data-mode={mode} data-focus={focus} data-hand={hand}>
+    <div
+      className="shell"
+      data-mode={mode}
+      data-focus={focus}
+      data-hand={hand}
+      data-style-cues={styleCues && inWrite}
+    >
       <TooltipLayer />
       <Toolbar view={view} />
       <ConflictBanner />
@@ -342,6 +353,7 @@ export function App() {
                 </div>
                 {inReview && <NotesPanel view={view} />}
                 {(inStyle || isStyle) && !preview && <StylePanel view={view} />}
+                {!isStyle && <StyleCues view={view} />}
                 {inWrite && !isStyle && !focus && !preview && <TipsCard />}
               </div>
             </>

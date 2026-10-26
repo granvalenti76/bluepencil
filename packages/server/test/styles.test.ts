@@ -60,24 +60,17 @@ describe("styles", () => {
     expect(ctx.style).toContain("Apre su un dettaglio.");
   });
 
-  it("reads the traits and finds cues with the model", async () => {
-    let calls = 0;
+  it("the model puts the measured schema into words, one sentence per dimension", async () => {
     fake = await startFakeLlm({
       chat: () =>
         replyWith(
-          calls++ === 0
-            ? JSON.stringify({
-                tratti: [{ tratto: "Frasi corte che smentiscono.", esempio: "Il furgone no." }],
-              })
-            : JSON.stringify({
-                spunti: [
-                  {
-                    citazione: "partecipazione numerosa",
-                    spunto: "Lo stile apre su una cosa vista.",
-                    esempio: "Alle sei il bar era aperto.",
-                  },
-                ],
-              }),
+          JSON.stringify({
+            sintesi: "Cronaca secca.",
+            ritmo: "Frasi corte.",
+            lessico: "",
+            costruzione: "Poche virgole.",
+            voce: "Terza persona.",
+          }),
         ),
     });
     const s = await makeServer({ modelUrl: fake.url });
@@ -91,45 +84,22 @@ describe("styles", () => {
     await writeFile(file, (await readFile(file, "utf8")).replace("## Piece 1", `## A\n\n${PIECE}`));
     const traits = await s.inject({ method: "POST", url: "/api/styles/traits", payload: { path } });
     expect(traits.json()).toEqual({
-      traits: [{ text: "Frasi corte che smentiscono.", quote: "Il furgone no." }],
-    });
-
-    const tips = await s.inject({
-      method: "POST",
-      url: "/api/styles/tips",
-      payload: { style: path, draft: "Una partecipazione numerosa." },
-    });
-    expect(tips.json()).toEqual({
-      checks: [],
-      tips: [
-        {
-          quote: "partecipazione numerosa",
-          tip: "Lo stile apre su una cosa vista.",
-          example: "Alle sei il bar era aperto.",
-        },
+      traits: [
+        { text: "Cronaca secca.", dim: "summary" },
+        { text: "Frasi corte.", dim: "rhythm" },
+        { text: "Poche virgole.", dim: "construction" },
+        { text: "Terza persona.", dim: "voice" },
       ],
     });
-    // The style is in the system message, the draft in the user one.
-    const body = fake.chatRequests()[1]!.body! as { messages: { content: string }[] };
-    expect(body.messages[0]!.content).toContain(PIECE);
-    expect(body.messages[1]!.content).toContain("Una partecipazione numerosa.");
+    // The model reads the numbers, not the pieces.
+    const body = fake.chatRequests()[0]!.body! as { messages: { content: string }[] };
+    expect(body.messages[1]!.content).toContain("Words per sentence:");
+    expect(body.messages[1]!.content).not.toContain(PIECE);
   });
 
   it("a style made in one go: labels, pasted pieces, a piece added later, traits saved in the file", async () => {
-    let call = 0;
     fake = await startFakeLlm({
-      chat: () =>
-        replyWith(
-          call++ === 0
-            ? JSON.stringify({ tratti: [{ tratto: "Frasi corte.", esempio: "Il furgone no." }] })
-            : JSON.stringify({
-                tratti: [
-                  { numero: 1, seguito: "no", citazione: "una partecipazione numerosa" },
-                  { numero: 9, seguito: true },
-                ],
-                spunti: [],
-              }),
-        ),
+      chat: () => replyWith(JSON.stringify({ sintesi: "Cronaca secca.", ritmo: "Frasi corte." })),
     });
     const s = await makeServer({ modelUrl: fake.url });
     const created = await s.inject({
@@ -159,9 +129,13 @@ describe("styles", () => {
       url: "/api/styles/traits",
       payload: { path, save: true },
     });
-    expect(traits.json().traits).toEqual([{ text: "Frasi corte.", quote: "Il furgone no." }]);
+    expect(traits.json().traits).toEqual([
+      { text: "Cronaca secca.", dim: "summary" },
+      { text: "Frasi corte.", dim: "rhythm" },
+    ]);
     const file = await readFile(join(s.dir, path), "utf8");
     expect(file).toContain("text: Frasi corte.");
+    expect(file).toContain("dim: rhythm");
     expect(file).toContain("## Da una bozza");
 
     const list = (await s.inject({ method: "GET", url: "/api/styles" })).json() as {
@@ -170,18 +144,8 @@ describe("styles", () => {
     expect(list.styles[0]).toMatchObject({
       author: "vari",
       tags: ["breve"],
-      quote: "Il furgone no.",
-    });
-
-    const tips = await s.inject({
-      method: "POST",
-      url: "/api/styles/tips",
-      payload: { style: path, draft: "Una partecipazione numerosa." },
-    });
-    // Trait 9 does not exist: not checked.
-    expect(tips.json()).toEqual({
-      tips: [],
-      checks: [{ text: "Frasi corte.", followed: false, quote: "una partecipazione numerosa" }],
+      quote: "Alle sei il bar era aperto.",
+      summary: "Cronaca secca.",
     });
   });
 
@@ -189,8 +153,8 @@ describe("styles", () => {
     const s = await makeServer();
     const res = await s.inject({
       method: "POST",
-      url: "/api/styles/tips",
-      payload: { style: TURBO, draft: "x" },
+      url: "/api/styles/traits",
+      payload: { path: TURBO },
     });
     expect(res.statusCode).toBe(400);
   });

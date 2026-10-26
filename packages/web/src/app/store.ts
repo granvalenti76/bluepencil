@@ -25,11 +25,12 @@ function saveMode(mode: Mode) {
   }
 }
 
-/** "Handwriting" and "Typing sounds": browser preferences, off by default. */
-type Pref = "handwriting" | "typingSounds";
+/** "Handwriting", "Typing sounds", "Style cues": browser preferences, off by default. */
+type Pref = "handwriting" | "typingSounds" | "styleCues";
 const PREF_KEY: Record<Pref, string> = {
   handwriting: "desk-handwriting",
   typingSounds: "desk-typing-sounds",
+  styleCues: "desk-style-cues",
 };
 function loadPref(key: Pref): boolean {
   try {
@@ -54,6 +55,8 @@ interface UiState {
   handwriting: boolean;
   /** A synthesised typing sound at every key (editor/typingSounds.ts). */
   typingSounds: boolean;
+  /** The style's cues numbered on the page in Write too, not only in Style mode. */
+  styleCues: boolean;
   /** Write: formatting bar, outline and page. Review: page and the editor's notes. Style: page and
    * the style the draft looks at. */
   mode: Mode;
@@ -80,6 +83,7 @@ export const useUi = create<UiState>()((set, get) => ({
   typewriter: false,
   handwriting: loadPref("handwriting"),
   typingSounds: loadPref("typingSounds"),
+  styleCues: loadPref("styleCues"),
   mode: loadMode(),
   draftsOpen: false,
   preview: false,

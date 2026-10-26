@@ -2589,31 +2589,6 @@ details.outline[open] > summary::before {
   font-size: 15px;
   line-height: 1.45;
 }
-.style-trait-list {
-  align-self: stretch;
-  list-style: none;
-  padding-left: 0 !important;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.style-trait-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.style-trait-text {
-  flex: 1;
-  min-width: 0;
-}
-.style-trait-list li[data-state="off"] .style-trait-text {
-  color: var(--text-muted);
-  text-decoration: line-through;
-}
-.style-trait-list li[data-state="fixed"] .chip {
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
 .style-quote {
   margin: 0;
   font-family: var(--font-text);
@@ -2621,14 +2596,6 @@ details.outline[open] > summary::before {
   font-style: italic;
   line-height: 1.4;
   color: var(--text-muted);
-}
-.style-quote-draft {
-  color: var(--text-2);
-}
-.style-busy {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .style-notes {
   align-self: stretch;
@@ -2755,44 +2722,21 @@ details.outline[open] > summary::before {
   display: flex;
   gap: 8px;
 }
-.style-checks {
-  list-style: none;
-  padding-left: 0 !important;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-family: var(--font-ui) !important;
-  font-size: var(--fs-small) !important;
-}
-.style-checks li {
-  display: flex;
-  gap: 8px;
-}
-.style-check-mark {
-  flex: 0 0 12px;
-  font-weight: var(--fw-bold);
-  color: var(--text-faint);
-}
-.style-checks li[data-followed="true"] .style-check-mark {
-  color: var(--fact-ok);
-}
-.style-checks li[data-followed="false"] .style-check-mark {
-  color: var(--sienna);
-}
 .style-primary,
 .style-card .btn-primary {
   background: var(--sienna);
 }
 
-/* The cues on the page: only in Style mode, in sienna, numbered like the cards. */
+/* The cues on the page: in Style mode (and in Write if asked), in sienna, numbered like the cards. */
 .cm-cue-n {
   display: none;
 }
-.shell[data-mode="style"] .cm-cue {
-  background: var(--sienna-bg);
-  border-bottom: 1.5px solid var(--sienna);
+.shell[data-mode="style"] .cm-cue,
+.shell[data-style-cues="true"] .cm-cue {
+  border-bottom: 1.5px dotted var(--sienna);
 }
-.shell[data-mode="style"] .cm-cue-n {
+.shell[data-mode="style"] .cm-cue-n,
+.shell[data-style-cues="true"] .cm-cue-n {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2807,10 +2751,220 @@ details.outline[open] > summary::before {
   font-size: 11px;
   font-style: italic;
   color: var(--sienna);
+  cursor: pointer;
+}
+.shell[data-style-cues="true"] .cm-cue-n:hover {
+  background: var(--sienna-bg);
 }
 .cm-sel-style {
   margin-left: 4px;
   color: var(--sienna-strong);
+}
+
+/* The schema of a style, by dimension, and the draft beside it. */
+.style-dim {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 4px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.style-dim .style-print {
+  padding: 2px 0 0;
+  border-bottom: 0;
+}
+.style-summary,
+.style-said-line {
+  margin: 4px 0 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text);
+}
+.style-said-line {
+  font-size: 14px;
+  color: var(--text-2);
+}
+.style-said {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--sienna-bg);
+}
+.style-said p {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text);
+}
+.style-said[data-state="off"] {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+.style-said[data-state="off"] p {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.style-said-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.style-state {
+  margin-right: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  background: var(--fact-bg);
+  color: var(--fact);
+}
+.style-state[data-state="fixed"] {
+  background: var(--accent-bg);
+  color: var(--accent-text);
+}
+.style-state[data-state="off"] {
+  background: var(--border-soft);
+  color: var(--text-muted);
+}
+.style-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 58px;
+  padding: 0 1px;
+  border-bottom: 1px solid var(--card-rule);
+}
+.style-bars-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--sienna-band);
+  opacity: 0.8;
+}
+.style-bars-para {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 100%;
+  min-width: 0;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 3px 3px 0 0;
+  background: transparent;
+  cursor: default;
+}
+button.style-bars-para {
+  cursor: pointer;
+}
+button.style-bars-para:hover {
+  background: var(--border-soft);
+}
+.style-bars-para[data-marked="true"] {
+  background: var(--sienna-bg);
+}
+.style-bar {
+  flex: 1 1 0;
+  max-width: 7px;
+  min-width: 1px;
+  border-radius: 1px 1px 0 0;
+  background: var(--pencil);
+}
+.style-bar[data-short="true"] {
+  background: var(--sienna);
+}
+.style-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.style-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.style-chip {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--code-bg);
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--text);
+}
+.style-chip small {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.style-chip[data-never] {
+  background: transparent;
+  border: 1px dashed var(--card-rule);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.style-stack {
+  display: flex;
+  height: 10px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.style-stack-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: var(--fs-caption);
+  color: var(--text-muted);
+}
+.style-stack-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.style-stack-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.style-stack [data-k="subject"],
+.style-stack-legend [data-k="subject"] {
+  background: var(--pencil);
+}
+.style-stack [data-k="setting"],
+.style-stack-legend [data-k="setting"] {
+  background: var(--sienna);
+}
+.style-stack [data-k="conjunction"],
+.style-stack-legend [data-k="conjunction"] {
+  background: var(--card-rule);
+}
+.style-stack [data-k="other"],
+.style-stack-legend [data-k="other"] {
+  background: var(--sienna-band);
+}
+.style-cue-tag {
+  display: block;
+  margin-bottom: 2px;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.style-cue[data-focus="true"] .style-note {
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--sienna-band);
+}
+.library-card-summary {
+  font-style: italic;
 }
 
 /* A style file: its labels at the top of its card. */
