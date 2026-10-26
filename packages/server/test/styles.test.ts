@@ -149,6 +149,39 @@ describe("styles", () => {
     });
   });
 
+  it("the editor's note: the code's cues, put into words by the model", async () => {
+    fake = await startFakeLlm({
+      chat: () =>
+        replyWith(
+          JSON.stringify({ sintesi: "Somiglia nel ritmo.", spunti: [{ numero: 1, nota: "Qui." }] }),
+        ),
+    });
+    const s = await makeServer({ modelUrl: fake.url });
+    const { path } = (
+      await s.inject({
+        method: "POST",
+        url: "/api/styles",
+        payload: { name: "Cronaca", lang: "it", pieces: [{ text: PIECE }] },
+      })
+    ).json() as { path: string };
+    const draft = Array.from(
+      { length: 30 },
+      () => "Una frase che dura e dura senza mai finire davvero, inoltre.",
+    ).join(" ");
+    const res = await s.inject({
+      method: "POST",
+      url: "/api/styles/note",
+      payload: { style: path, draft },
+    });
+    expect(res.statusCode).toBe(200);
+    const note = res.json() as { summary: string; notes: Record<string, string> };
+    expect(note.summary).toBe("Somiglia nel ritmo.");
+    expect(Object.values(note.notes)).toEqual(["Qui."]);
+    const body = fake.chatRequests()[0]!.body! as { messages: { content: string }[] };
+    expect(body.messages[1]!.content).toContain("CUES:");
+    expect(body.messages[1]!.content).not.toContain(PIECE);
+  });
+
   it("only files in Styles/ are styles", async () => {
     const s = await makeServer();
     const res = await s.inject({

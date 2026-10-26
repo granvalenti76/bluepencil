@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
   appendPiece,
+  compareWithStyle,
   DEFAULT_LANGUAGE,
   isModelError,
   isStylePath,
@@ -14,7 +15,10 @@ import {
   repairMessage,
   STYLES_DIR,
   ModelError,
+  readNoteAnswer,
   readTraitsAnswer,
+  styleNoteMessages,
+  styleSchema,
   styleTraitsMessages,
   styleQuote,
   styleSummary,
@@ -28,7 +32,7 @@ import type { DraftsRepo } from "../drafts/repo.ts";
 import type { IndexDb } from "../index-db/index.ts";
 import type { Languages } from "../languages.ts";
 import type { ModelService } from "../model/service.ts";
-import { slugify } from "../slug.ts";
+import { freePath, slugify } from "../slug.ts";
 
 /** A style in the library (`GET /api/styles`). */
 export interface StyleSummary {
@@ -67,6 +71,8 @@ const PieceBody = Piece.extend({
 });
 /** `save`: write the traits into the file (when it is not open in the editor). */
 const TraitsBody = z.object({ path: z.string().min(1), save: z.boolean().optional() });
+/** The draft's body as the editor has it now. */
+const NoteBody = z.object({ style: z.string().min(1), draft: z.string().max(400_000) });
 
 /** Putting a style into words may take a while with reasoning on. */
 const MAX_TOKENS = 8192;
@@ -74,8 +80,9 @@ const MAX_TOKENS = 8192;
 /**
  * Styles: files in `Styles/` inside the drafts folder, opened and edited like drafts. Here the
  * library, a new style (labels and pasted pieces, written into the file by Bluepencil), a piece
- * added from a selection, and the model call that puts the style's schema into words (the schema
- * and the comparison with a draft are measured by the code, in the page).
+ * added from a selection, and the two model calls: putting the style's schema into words, and
+ * the editor's note on a draft beside the style (the schema and the comparison are measured by
+ * the code; the model reads the numbers and the draft's paragraphs, never the style's pieces).
  * The traits are saved here when the style is not open; when it is, the page saves them in the
  * open file, so the editor and the file never disagree.
  */
@@ -138,9 +145,7 @@ export function registerStyleRoutes(
       return reply.code(400).send({ error: "bad_request", message: "Unknown language" });
     }
     const base = `${STYLES_DIR}/${slugify(parsed.data.name, "style")}`;
-    const existing = new Set(await repo.list());
-    let path = `${base}.md`;
-    for (let n = 2; existing.has(path); n++) path = `${base}-${n}.md`;
+    const path = freePath(base, await repo.list());
     // The folder is created with the first style; `repo.write` still checks where it leads.
     await mkdir(join(await repo.root(), STYLES_DIR), { recursive: true });
     const { name, author, source, tags, pieces } = parsed.data;
@@ -198,10 +203,37 @@ export function registerStyleRoutes(
       return { traits: merged };
     });
   });
+  app.post<{ Body: unknown }>("/api/styles/note", async (req, reply) => {
+    const parsed = NoteBody.safeParse(req.body);
+    if (!parsed.success || !isStylePath(parsed.data.style)) {
+      return reply.code(400).send({ error: "bad_request", message: "Not a style" });
+    }
+    const style = readStyle((await repo.read(parsed.data.style)).text);
+    if (style.pieces.length === 0) {
+      return reply.code(409).send({ error: "empty", message: "The style has no pieces yet" });
+    }
+    const pack = languages.forDraft(style.lang);
+    const comparison = compareWithStyle(parsed.data.draft, styleSchema(style, pack), pack);
+    const messages = styleNoteMessages(pack, style, comparison, parsed.data.draft);
+    if (!messages) return noPrompts(reply, pack.name);
+    const ids = comparison.cues.map((c) => c.id);
+    return ask(reply, (signal) =>
+      model.run(
+        (client) =>
+          readAnswer(
+            client,
+            { messages, temperature: 0.4, maxTokens: MAX_TOKENS, signal },
+            (content) => readNoteAnswer(content, ids),
+            (error) => repairMessage(pack, error),
+          ),
+        { signal },
+      ),
+    );
+  });
 }
 
 /**
- * One request, read leniently (`readTraitsAnswer`); if nothing at all can be
+ * One request, read leniently (`readTraitsAnswer`, `readNoteAnswer`); if nothing at all can be
  * read, the model is asked once to fix its answer, as for the outline.
  */
 async function readAnswer<T>(

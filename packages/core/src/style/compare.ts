@@ -51,6 +51,13 @@ export interface StyleComparison {
 
 /** At most this many cues: the paragraphs first, then the measures furthest out. */
 const MAX_CUES = 8;
+/** At most this many cues on the whole draft. */
+const MAX_GLOBAL = 4;
+/**
+ * A measure gives a cue on the whole draft only this far out of the style's range, relative to
+ * the range's near end: 12.7 words a sentence against 14 is not worth a cue, 19% against 38% is.
+ */
+const MIN_GAP = 0.2;
 /** Under this many words, the style cannot say it "never" uses a word. */
 const NEVER_MIN_WORDS = 300;
 
@@ -196,8 +203,12 @@ export function compareWithStyle(
     const width = x.hi - x.lo || Math.abs(x.hi) || 1;
     return x.out === "high" ? (x.value! - x.hi) / width : (x.lo - x.value!) / width;
   };
+  const gap = (x: ComparedMeasure) => {
+    const end = x.out === "high" ? x.hi : x.lo;
+    return Math.abs(x.value! - end) / Math.max(Math.abs(end), 1);
+  };
   const global: StyleCue[] = measures
-    .filter((x) => x.out && !covered.has(x.def.id))
+    .filter((x) => x.out && !covered.has(x.def.id) && gap(x) >= MIN_GAP)
     .sort((a, b) => distance(b) - distance(a))
     .map((x) => ({
       id: `measure:${x.def.id}:${x.out}`,
@@ -206,7 +217,8 @@ export function compareWithStyle(
       text: `${x.def.label}: ${formatMeasure(x.def, x.value!)} in this draft; in the style ${span(x.def, x.lo, x.hi)}.`,
       at: null,
       words: [],
-    }));
+    }))
+    .slice(0, MAX_GLOBAL);
 
   const cues = [...local, ...global].slice(0, MAX_CUES);
   const inLine = enough

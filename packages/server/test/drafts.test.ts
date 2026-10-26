@@ -205,4 +205,16 @@ describe("drafts API", () => {
     expect((await post("Le cœur")).json().path).toBe("le-coeur.md");
     expect((await post("Ελληνικά")).json().path).toBe("bozza.md");
   });
+
+  test("a file with the same name in other case is taken (macOS, Windows)", async () => {
+    const s = await makeServer();
+    await writeFile(join(s.dir, "Esempio.md"), "# Il pane della domenica\n");
+    const res = await s.inject({
+      method: "POST",
+      url: "/api/drafts",
+      payload: { title: "Esempio" },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().path).toBe("esempio-2.md");
+  });
 });

@@ -8,7 +8,9 @@ import {
   mergeTraits,
   newStyleText,
   readStyle,
+  readNoteAnswer,
   readTraitsAnswer,
+  styleNoteMessages,
   styleQuote,
   styleSchema,
   styleSummary,
@@ -308,5 +310,44 @@ describe("reading the model's answer", () => {
     ]);
     expect(readTraitsAnswer("Lo stile è sobrio.")).toBeNull();
     expect(readTraitsAnswer(JSON.stringify({ altro: "x" }))).toBeNull();
+  });
+});
+
+describe("the editor's note on a draft", () => {
+  const it = builtinPack("it");
+  const style = readStyle(MOVING_STYLE);
+  const comparison = compareWithStyle(MARKET, styleSchema(style, it), it);
+
+  test("the model reads the cues with their paragraphs, never the style's pieces", () => {
+    const withWords = {
+      ...style,
+      traits: [{ text: "Lunghe che si chiudono su una breve.", dim: "rhythm" as const }],
+    };
+    const m = styleNoteMessages(it, withWords, comparison, MARKET)!;
+    expect(m[0]!.content).toContain('"nota"');
+    expect(m[1]!.content).toContain("- Rhythm: Lunghe che si chiudono su una breve.");
+    expect(m[1]!.content).toMatch(/^1\. \[Vocabulary · ¶2\] 5 adverbs/m);
+    expect(m[1]!.content).toContain("Paragraph 3: <<<Ettore teneva le zucchine");
+    expect(m[1]!.content).not.toContain("Mio padre tornava la sera");
+  });
+
+  test("notes by cue number; unknown numbers dropped; nothing readable is null", () => {
+    const ids = comparison.cues.map((c) => c.id);
+    const r = readNoteAnswer(
+      JSON.stringify({
+        sintesi: "Somiglia nella voce.",
+        spunti: [
+          { numero: 1, nota: "Troppi avverbi." },
+          { numero: "2", nota: "Ritmo piatto." },
+          { numero: 99, nota: "x" },
+        ],
+      }),
+      ids,
+    );
+    expect(r).toEqual({
+      summary: "Somiglia nella voce.",
+      notes: { [ids[0]!]: "Troppi avverbi.", [ids[1]!]: "Ritmo piatto." },
+    });
+    expect(readNoteAnswer("La bozza va bene.", ids)).toBeNull();
   });
 });

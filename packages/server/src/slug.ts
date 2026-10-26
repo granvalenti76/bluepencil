@@ -10,3 +10,14 @@ export function slugify(title: string, untitled: string): string {
     .replace(/-+$/g, "");
   return slug || untitled;
 }
+
+/**
+ * A free path for a new file: `<base>.md`, else `<base>-2.md` and on. Compared without case: on
+ * macOS and Windows `Esempio.md` and `esempio.md` are the same file.
+ */
+export function freePath(base: string, existing: Iterable<string>): string {
+  const taken = new Set([...existing].map((p) => p.toLowerCase()));
+  let path = `${base}.md`;
+  for (let n = 2; taken.has(path.toLowerCase()); n++) path = `${base}-${n}.md`;
+  return path;
+}

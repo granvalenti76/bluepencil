@@ -31,12 +31,14 @@ export type PromptName = keyof typeof PROMPT_FILES;
 /**
  * Optional prompts: a pack without them still loads, without that feature. The editor's letter
  * goes with `letter` and `letterText` in `prompts/tools.json`. The editor's first words on the
- * first start are `greeting`. Styles need `style-traits` (putting a style's schema into words).
+ * first start are `greeting`. Styles need `style-traits` (putting a style's schema into words) and
+ * `style-note` (the editor's note on a draft beside a style).
  */
 export const OPTIONAL_PROMPT_FILES = {
   letter: { allowed: [], required: [] },
   greeting: { allowed: [], required: [] },
   "style-traits": { allowed: [], required: [] },
+  "style-note": { allowed: [], required: [] },
 } as const satisfies Record<string, { allowed: readonly string[]; required: readonly string[] }>;
 export type OptionalPromptName = keyof typeof OPTIONAL_PROMPT_FILES;
 

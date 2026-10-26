@@ -8,6 +8,7 @@ import type {
   PassState,
   ScoreKind,
   SectionInfo,
+  StyleNote,
   StyleTrait,
 } from "@desk/core";
 
@@ -272,6 +273,8 @@ export const api = {
     request<{ path: string; pieces: number }>("POST", "/api/styles/piece", { path, text, title }),
   readStyleTraits: (path: string, save: boolean, signal?: AbortSignal) =>
     request<{ traits: StyleTrait[] }>("POST", "/api/styles/traits", { path, save }, signal),
+  styleNote: (style: string, draft: string, signal?: AbortSignal) =>
+    request<StyleNote>("POST", "/api/styles/note", { style, draft }, signal),
   listDrafts: async () => (await request<{ drafts: DraftRow[] }>("GET", "/api/drafts")).drafts,
   getDraft: (path: string) => request<DraftDetail>("GET", `/api/drafts/${enc(path)}`),
   /** "Clear suggestions": removes all the draft's notes (the text does not change). */

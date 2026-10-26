@@ -25,7 +25,7 @@ words ignored when searching sources, the few words Bluepencil writes into a dra
     system.md  structure.md  structure-score.md  facts.md  grammar.md  prose.md
     prose-score.md  focus.md  outline.md  section.md  rewrite.md  repair.md
     letter.md      (optional: the editor's letter)
-    style-traits.md  (optional: styles)
+    style-traits.md  style-note.md  (optional: styles)
     labels.json  tools.json
   archetypes/
     article.json  blog.json  report.json  docs.json
@@ -103,6 +103,8 @@ vocabulary, construction, voice); this prompt asks the model to put the numbers 
 sentence per dimension and a summary. The answer is JSON with fixed field names (`sintesi`,
 `ritmo`, `lessico`, `costruzione`, `voce`): copy the English file and translate the instructions,
 not the field names. Without it, styles still measure and compare, without the sentences.
+`style-note.md` asks the model for a note on each cue of a draft beside a style (`sintesi`,
+`spunti` with `numero` and `nota`); without it the cues keep the code's own wording.
 
 ### prompts/labels.json and prompts/tools.json
 

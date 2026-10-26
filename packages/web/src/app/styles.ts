@@ -5,6 +5,7 @@ import {
   traitsForFile,
   type Style,
   type StyleComparison,
+  type StyleNote,
   type StyleSchema,
 } from "@desk/core";
 import { api, errorMessage, type NewStyle, type StyleSummary } from "./api.ts";
@@ -46,6 +47,11 @@ interface StylesState {
   missing: string | null;
   /** A cue's number clicked on the page: its card is shown. */
   focusCue: number | null;
+  /** The editor's last note per draft, with the style and the text it was written on. */
+  notes: Record<string, StyleNote & { style: string; bodyHash: string }>;
+  /** The editor is reading the open draft beside the style. */
+  noting: boolean;
+  noteError: string | null;
   /** Cues set aside ("Not for this text") while the page stays open, by cue id, per draft. */
   hidden: Record<string, string[]>;
 }
@@ -60,6 +66,9 @@ export const useStyles = create<StylesState>()(() => ({
   looking: null,
   missing: null,
   focusCue: null,
+  notes: {},
+  noting: false,
+  noteError: null,
   hidden: {},
 }));
 
@@ -70,6 +79,10 @@ function openPath(path: string) {
   history.replaceState(null, "", url.pathname + url.search);
   void session.open(path);
 }
+
+let noteController: AbortController | null = null;
+/** Styles described once in this session without being asked: not again if it failed. */
+const described = new Set<string>();
 
 const fail = (e: unknown, fallback: string) =>
   useStyles.setState({ error: errorMessage(e, fallback) });
@@ -172,6 +185,37 @@ export const styles = {
       useStyles.setState((s) => ({ reading: s.reading.filter((p) => p !== path) }));
       void styles.load();
     }
+  },
+
+  /** A style a draft looks at, never put into words yet: the model does it, once, in the background. */
+  describeIfNew(path: string, style: Style) {
+    if (described.has(path) || style.pieces.length === 0 || style.traits.some((t) => t.dim)) return;
+    described.add(path);
+    void styles.readTraits(path);
+  },
+
+  /** The editor's note on the draft beside the style: what the style does where the draft differs. */
+  async readNote(draft: string, style: string, body: string, bodyHash: string) {
+    noteController?.abort();
+    const mine = new AbortController();
+    noteController = mine;
+    useStyles.setState({ noting: true, noteError: null });
+    try {
+      const note = await api.styleNote(style, body, mine.signal);
+      useStyles.setState((s) => ({ notes: { ...s.notes, [draft]: { ...note, style, bodyHash } } }));
+    } catch (e) {
+      if (!mine.signal.aborted) {
+        useStyles.setState({ noteError: errorMessage(e, "The editor couldn’t answer") });
+      }
+    } finally {
+      if (noteController === mine) {
+        noteController = null;
+        useStyles.setState({ noting: false });
+      }
+    }
+  },
+  cancelNote() {
+    noteController?.abort();
   },
 
   hide(draft: string, cue: string) {

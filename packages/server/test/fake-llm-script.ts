@@ -221,6 +221,25 @@ export const scriptedChat: ChatHandler = (body) => {
       "Mi presento in poche parole.",
     );
   }
+  // The editor's note on a draft beside a style: a note for every numbered cue.
+  if (system.includes('"nota"')) {
+    const it = system.includes("Scrivi in italiano");
+    const cues = [...user.matchAll(/^(\d+)\. \[([^\]·]+)·([^\]]+)\]/gm)];
+    return replyWith(
+      JSON.stringify({
+        sintesi: it
+          ? "La bozza somiglia allo stile nella voce, se ne allontana nel ritmo e nel lessico."
+          : "The draft is like the style in its voice, and moves away in rhythm and vocabulary.",
+        spunti: cues.map((c) => ({
+          numero: Number(c[1]),
+          nota: it
+            ? `Qui (${c[3]!.trim()}) lo stile fa diversamente: ${c[2]!.trim().toLowerCase()} più vario, e chi legge sente il respiro.`
+            : `Here (${c[3]!.trim()}) the style works differently: a livelier ${c[2]!.trim().toLowerCase()}, and the reader feels the breath.`,
+        })),
+      }),
+      "Leggo la bozza accanto allo stile.",
+    );
+  }
   // A style's schema into words, before the outline (the prompts open the same way).
   if (system.includes('"ritmo"')) {
     const it = system.includes("Scrivi in italiano");

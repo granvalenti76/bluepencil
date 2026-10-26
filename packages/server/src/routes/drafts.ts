@@ -11,7 +11,7 @@ import type { DraftWatcher } from "../drafts/watcher.ts";
 import { ConflictError, NotFoundError, PathError, type DraftsRepo } from "../drafts/repo.ts";
 import type { IndexDb } from "../index-db/index.ts";
 import type { Languages } from "../languages.ts";
-import { slugify } from "../slug.ts";
+import { freePath, slugify } from "../slug.ts";
 
 interface Deps {
   languages: Languages;
@@ -74,9 +74,7 @@ export function registerDraftRoutes(
 
       const clean = title.trim();
       const base = slugify(clean, languages.forDraft(lang).untitledSlug);
-      const existing = new Set(await repo.list());
-      let path = `${base}.md`;
-      for (let n = 2; existing.has(path); n++) path = `${base}-${n}.md`;
+      const path = freePath(base, await repo.list());
 
       const text = patchFrontMatter(`# ${clean}\n`, {
         title: clean,
